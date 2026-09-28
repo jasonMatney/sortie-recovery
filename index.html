@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sortie Recovery Workbench</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+body{margin:0}[hidden]{display:none!important}img{max-width:100%}
+:root{
+  --bg:#f2f4f7; --panel:#ffffff; --sunk:#e8ecf1; --ink:#161d2b; --muted:#566074; --rule:#d5dbe3;
+  --accent:#2b54d9; --accent-ink:#ffffff; --accent-soft:#e3e9fc;
+  --sky:#dde4ec; --land:#e3e6dd; --block:#d6dbd0; --water:#9fbad3; --road:#f7f8fa; --wall:#eeece6; --roof:#6d7480;
+  --jds0:#9aa7b8; --jds1:#e7c14f; --jds2:#e0791c; --jds3:#a8231c; --jdsx:#7c8594; --unscanned:#c4c9cf;
+  --sand:#d9bc7f; --sand2:#b0823a; --flood:#86b5e0; --flood2:#2d6bb0;
+  --ok:#1f7a4d; --ok-soft:#dcf1e6; --warn:#9a5b00; --warn-soft:#fbead0; --bad:#c0271c; --bad-soft:#f8dcd9;
+  --paper:#ffffff; --paper-ink:#1b2230;
+  --display:'Archivo','Arial Narrow',system-ui,sans-serif;
+  --body:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#10141b; --panel:#171d27; --sunk:#1e2632; --ink:#e7ebf2; --muted:#9aa5b8; --rule:#2b3544;
+    --accent:#7d9bff; --accent-ink:#0e1320; --accent-soft:#1f2a47;
+    --sky:#0b1017; --land:#20262e; --block:#262d37; --water:#16324a; --road:#3a4454; --wall:#3b4350; --roof:#4b5360;
+    --jds0:#6f7c8e; --jds1:#e3c25d; --jds2:#f08d34; --jds3:#ef5b4f; --jdsx:#5c6576; --unscanned:#353d49;
+    --sand:#8f7a4f; --sand2:#c39a52; --flood:#3d6f9c; --flood2:#63a0e6;
+    --ok:#5fd19a; --ok-soft:#173527; --warn:#f2b35c; --warn-soft:#3a2a12; --bad:#ff6b5e; --bad-soft:#3e1d1b;
+    --paper:#1d2430; --paper-ink:#e7ebf2;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#10141b; --panel:#171d27; --sunk:#1e2632; --ink:#e7ebf2; --muted:#9aa5b8; --rule:#2b3544;
+  --accent:#7d9bff; --accent-ink:#0e1320; --accent-soft:#1f2a47;
+  --sky:#0b1017; --land:#20262e; --block:#262d37; --water:#16324a; --road:#3a4454; --wall:#3b4350; --roof:#4b5360;
+  --jds0:#6f7c8e; --jds1:#e3c25d; --jds2:#f08d34; --jds3:#ef5b4f; --jdsx:#5c6576; --unscanned:#353d49;
+  --sand:#8f7a4f; --sand2:#c39a52; --flood:#3d6f9c; --flood2:#63a0e6;
+    --ok:#5fd19a; --ok-soft:#173527; --warn:#f2b35c; --warn-soft:#3a2a12; --bad:#ff6b5e; --bad-soft:#3e1d1b;
+  --paper:#1d2430; --paper-ink:#e7ebf2;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45;padding-inline:16px;padding-block:0 24px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+.top{max-width:1440px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding-block:16px 12px}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand h1{margin:0;font-family:var(--display);font-stretch:78%;font-weight:800;font-size:28px;letter-spacing:.01em;text-transform:uppercase}
+.brand span{color:var(--muted);font-size:13px}
+.steps{display:flex;gap:4px;margin-left:auto;background:var(--sunk);padding:4px;border-radius:10px;flex-wrap:wrap}
+.step{border:0;background:transparent;padding:8px 14px;border-radius:7px;display:flex;align-items:center;gap:8px;min-height:40px;color:var(--muted);font-weight:500}
+.step b{font-family:var(--display);font-stretch:80%;font-weight:700;font-size:15px;color:var(--ink)}
+.step[aria-selected="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.step .k{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.sample{font-size:12px;color:var(--warn);background:var(--warn-soft);padding:3px 8px;border-radius:5px;font-weight:600}
+
+.wrap{max-width:1440px;margin:0 auto}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start}
+@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--panel);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.stagehead{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--rule)}
+.stagehead h2{margin:0;font-family:var(--display);font-stretch:85%;font-weight:700;font-size:19px;text-wrap:balance}
+.stagehead .sub{color:var(--muted);font-size:13px}
+.side{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card h3{margin:0;font-family:var(--display);font-stretch:85%;font-weight:700;font-size:17px}
+
+/* 3D viewport */
+.slot{position:relative;width:100%;aspect-ratio:16/10;max-width:100%;background:var(--sky)}
+@media (max-width:640px){.slot{aspect-ratio:4/5}}
+.vp{position:absolute;inset:0;overflow:hidden;touch-action:none}
+.vp canvas{position:absolute;inset:0;display:block;cursor:grab}
+.vp canvas:active{cursor:grabbing}
+.labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;transform:translate(-50%,-100%);font-family:var(--mono);font-size:11px;font-weight:500;background:var(--ink);color:var(--bg);padding:3px 7px;border-radius:4px;white-space:nowrap;will-change:transform}
+.lbl.sel{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.lbl.soft{background:transparent;color:var(--ink);text-shadow:0 0 3px var(--sky),0 0 3px var(--sky)}
+.hud{position:absolute;left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;pointer-events:none}
+.hud>*{pointer-events:auto}
+.hudtag{font-size:12px;color:var(--muted);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:5px 9px}
+.scanbar{position:absolute;left:12px;right:12px;top:12px;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:8px 12px;font-size:12.5px}
+.scanbar .track{flex-grow:1;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.scanbar .fill{height:6px;background:var(--accent);width:0}
+.nogl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--muted)}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:10px 16px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--rule);background:var(--panel);border-radius:999px;padding:5px 11px;font-size:12.5px;min-height:32px;display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.dist{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--sunk)}
+.distkey{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;font-size:13px}
+.distkey div{display:flex;justify-content:space-between;gap:8px}
+.distkey i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+
+.list{display:flex;flex-direction:column;border-top:1px solid var(--rule)}
+.row{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 4px;border:0;border-bottom:1px solid var(--rule);background:transparent;text-align:left;width:100%}
+.row:hover{background:var(--sunk)}
+.row[aria-current="true"]{background:var(--accent-soft)}
+.row .dot{width:12px;height:12px;border-radius:3px}
+.row .t{font-weight:600}
+.row .s{font-size:12.5px;color:var(--muted)}
+.pill{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 7px;border-radius:5px;white-space:nowrap}
+.p-prov{background:var(--warn-soft);color:var(--warn)}
+.p-ref{background:var(--accent-soft);color:var(--accent)}
+.p-ver{background:var(--ok-soft);color:var(--ok)}
+.p-unl{border:1px dashed var(--muted);color:var(--muted)}
+.p-conf{background:var(--ok-soft);color:var(--ok)}
+.p-rej{background:var(--bad-soft);color:var(--bad)}
+.p-fld{background:var(--sunk);color:var(--ink)}
+.p-pend{background:var(--sunk);color:var(--muted)}
+
+.btn{border:1px solid var(--rule);background:var(--panel);border-radius:8px;padding:10px 14px;min-height:44px;font-weight:600}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:13px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}
+.kv div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.kv span{font-size:12px;color:var(--muted)}
+.kv strong{font-weight:600;overflow-wrap:anywhere}
+.bar{display:grid;grid-template-columns:120px minmax(0,1fr) 42px;gap:10px;align-items:center;font-size:13px}
+.bar .track{height:8px;background:var(--sunk);border-radius:4px;overflow:hidden}
+.bar .fill{display:block;height:8px;border-radius:4px;background:var(--accent)}
+.bar .fill.low{background:var(--warn)}
+.note{font-size:13px;padding:10px 12px;border-radius:8px;background:var(--warn-soft);color:var(--ink)}
+.note b{color:var(--warn)}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.route{font-size:13px;display:flex;flex-direction:column;gap:4px}
+
+.paper{background:var(--paper);color:var(--paper-ink);padding:28px clamp(16px,4vw,40px);display:flex;flex-direction:column;gap:16px}
+.paper h2{margin:0;font-family:var(--display);font-stretch:85%;font-weight:800;font-size:26px}
+.paper p{margin:0;max-width:72ch;line-height:1.6}
+.ph{background:var(--warn-soft);color:var(--warn);padding:0 4px;border-radius:3px;font-weight:600}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px}
+th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 8px;border-bottom:2px solid var(--ink)}
+td{padding:9px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+td.q{text-align:right}
+textarea{width:100%;min-height:150px;font-family:var(--mono);font-size:12px;background:var(--sunk);color:var(--ink);border:1px solid var(--rule);border-radius:8px;padding:10px;resize:vertical}
+.check{display:flex;justify-content:space-between;gap:8px;font-size:13.5px}
+.check em{font-style:normal;font-weight:600}
+.foot{max-width:1440px;margin:16px auto 0;color:var(--muted);font-size:12px;line-height:1.5}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;font-size:13px;z-index:5}
+@media (prefers-reduced-motion:no-preference){.row,.step,.btn{transition:background .15s}}
+/* intro */
+.intro{outline:0;position:fixed;inset:0;z-index:20;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow-y:auto;padding:calc(24px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.introcard{max-width:1040px;margin:0 auto;background:var(--panel);border:1px solid var(--rule);border-radius:16px;box-shadow:0 24px 60px rgba(10,16,30,.22);overflow:hidden}
+.ihero{padding:32px clamp(20px,4vw,44px) 24px;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid var(--rule)}
+.ihero .kick{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.ihero h2{margin:0;font-family:var(--display);font-stretch:78%;font-weight:800;font-size:clamp(30px,4.6vw,48px);line-height:1.02;text-transform:uppercase;text-wrap:balance}
+.ihero p{margin:0;max-width:68ch;font-size:15.5px;line-height:1.6;color:var(--ink)}
+.iflow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-bottom:1px solid var(--rule)}
+.iflow>div{padding:20px clamp(20px,3vw,32px);display:flex;flex-direction:column;gap:6px;border-right:1px solid var(--rule)}
+.iflow>div:last-child{border-right:0}
+.iflow .n{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.iflow h3{margin:0;font-family:var(--display);font-stretch:85%;font-weight:700;font-size:20px}
+.iflow p{margin:0;font-size:13.5px;line-height:1.55;color:var(--muted)}
+.iflow .tag{align-self:flex-start;margin-top:4px}
+.idata{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0}
+.idata>section{padding:20px clamp(20px,3vw,32px);display:flex;flex-direction:column;gap:10px}
+.idata>section+section{border-left:1px solid var(--rule)}
+.idata ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:13.5px;line-height:1.5}
+.idata li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:8px}
+.idata li svg{margin-top:3px}
+.istats{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13px;color:var(--muted)}
+.istats b{font-family:var(--mono);font-size:18px;color:var(--ink);display:block;font-weight:500}
+.ifoot{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;padding:18px clamp(20px,3vw,32px);background:var(--sunk);border-top:1px solid var(--rule)}
+.ifoot p{margin:0;font-size:12.5px;color:var(--muted);max-width:62ch;line-height:1.5}
+.ifoot a{color:var(--accent)}
+.aboutbtn{border:1px solid var(--rule);background:var(--panel);border-radius:8px;padding:6px 12px;min-height:36px;font-size:13px;font-weight:600}
+@media (max-width:760px){.iflow,.idata{grid-template-columns:minmax(0,1fr)}.iflow>div{border-right:0;border-bottom:1px solid var(--rule)}.idata>section+section{border-left:0;border-top:1px solid var(--rule)}}
+
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><h1>Sortie</h1><span>Area sweep → site detail → DDD scope</span></div>
+  <span class="sample">Real Hurricane Ian labels · illustrative facilities and site detail</span>
+  <button class="aboutbtn" id="aboutbtn" type="button">About this demo</button>
+  <nav class="steps" role="tablist" aria-label="Workflow">
+    <button class="step" role="tab" id="tab-sweep" data-view="sweep"><span class="k">1</span><b>Sweep</b> area triage</button>
+    <button class="step" role="tab" id="tab-site" data-view="site"><span class="k">2</span><b>Site</b> defect review</button>
+    <button class="step" role="tab" id="tab-scope" data-view="scope"><span class="k">3</span><b>Scope</b> DDD draft</button>
+  </nav>
+</header>
+
+<main class="wrap" id="app"></main>
+<div class="intro" id="intro" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+ <div class="introcard">
+  <div class="ihero">
+   <div class="kick">Concept prototype · disaster recovery documentation</div>
+   <h2 id="intro-title">From drone flight to damage description</h2>
+   <p>After a disaster, inspectors walk every damaged site to measure and describe what failed for FEMA Public Assistance. Sortie shows how drone imagery and computer vision could hand them a pre-filled, reviewable draft instead: triage a whole area in minutes, zoom into the facilities that matter, and assemble the evidence behind each line of a Damage Description and Dimensions (DDD).</p>
+  </div>
+  <div class="iflow">
+   <div><span class="n">Step 1</span><h3>Sweep</h3><p>One wide-area flight gives every building a damage level on the Joint Damage Scale and marks every blocked or flooded road, so teams know where to go and how to get there.</p><span class="pill p-ver tag">Real Hurricane Ian labels</span></div>
+   <div><span class="n">Step 2</span><h3>Site</h3><p>A detailed flight over a priority facility finds component damage on a 3D model: missing roofing, exposed decking, debris. Each defect keeps its evidence, measurement and uncertainty, and a reviewer confirms it.</p><span class="pill p-prov tag">Illustrative defects</span></div>
+   <div><span class="n">Step 3</span><h3>Scope</h3><p>Confirmed defects become DDD line items. Anything a drone can't see goes on the inspector's field checklist. The inspector verifies, and FEMA's Grants Manager produces the final DDD.</p><span class="pill p-prov tag">Illustrative draft</span></div>
+  </div>
+  <div class="idata">
+   <section>
+    <div class="label">What the Sweep view shows</div>
+    <div class="istats"><span><b>931</b>buildings, labelled</span><span><b>1,120</b>road damage patches</span><span><b>82</b>impassable road segments</span></div>
+    <ul>
+     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span>Building footprints and damage levels for part of Fort Myers Beach, FL, labelled by human annotators from drone imagery flown after Hurricane Ian (2022).</span></li>
+     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span>Road debris, obstruction and flooding labels from the same imagery. Routes avoid impassable segments.</span></li>
+     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--warn)" stroke-width="2"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.5"/><circle cx="8" cy="11" r=".6" fill="var(--warn)"/></svg><span>Building heights, the staging point and the five public facilities are placed for the demo. Their footprints and damage labels are real; their roles are not.</span></li>
+     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--warn)" stroke-width="2"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.5"/><circle cx="8" cy="11" r=".6" fill="var(--warn)"/></svg><span>These are human labels, not model output. A model trained on this dataset would produce the same kind of map.</span></li>
+    </ul>
+   </section>
+   <section>
+    <div class="label">How to use it</div>
+    <ul>
+     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span>Drag the 3D map to orbit, scroll to zoom, and click any building for its label.</span></li>
+     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span>Press <b>Replay sweep flight</b> to watch the drone survey the island.</span></li>
+     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span>Pick a facility, check its route from staging, then open <b>Review site in 3D</b> to confirm, reject or send defects to the field.</span></li>
+     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span>Open <b>Scope</b> to see the DDD draft build from your decisions, and copy the inspection fields as CSV.</span></li>
+    </ul>
+   </section>
+  </div>
+  <div class="ifoot">
+   <p>Data: CRASAR-U-DROIDs, Center for Robot-Assisted Search and Rescue, Texas A&amp;M (Manzini, Murphy et al.), CC BY 4.0, with Microsoft building footprints and OpenStreetMap roads as packaged there. <a href="https://huggingface.co/datasets/CRASAR/CRASAR-U-DROIDs" target="_blank" rel="noopener">Dataset page</a>. This demo does not determine eligibility, cause or cost, and is not affiliated with FEMA.</p>
+   <button class="btn primary" id="introgo" type="button">Start the tour</button>
+  </div>
+ </div>
+</div>
+
+
+<p class="foot">Concept prototype. The Sweep view uses real building and road damage labels for part of Fort Myers Beach, FL after Hurricane Ian, from CRASAR-U-DROIDs (Manzini, Murphy et al., Texas A&amp;M; CC BY 4.0); building footprints are Microsoft's and roads are OpenStreetMap, as packaged in that dataset. Building heights, the staging point and the facility roles are illustrative, and the Site and Scope views use synthetic defects. Nothing here determines Public Assistance eligibility, cause or cost.</p>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+/* ================= data ================= */
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+var R=rng(20221001);
+/* Real labels: CRASAR-U-DROIDs (CC BY 4.0), UAS orthomosaic 1001-Ft-Myers-Beach-Boone, Hurricane Ian.
+   Units: metres in a local frame, x east, y south. Building footprints: Microsoft (via CRASAR). Roads: OSM (via CRASAR). */
+var RAW={"blds": "-215,-408,37,37,92,1;-71,-320,38,18,1,0;-124,-407,39,37,91,0;-191,-313,35,33,0,1;-79,-407,36,36,91,0;-169,-404,36,27,179,0;-131,-314,32,36,89,1;-262,-33,120,45,179,1;-118,-34,129,72,2,0;-135,36,48,32,1,0;-128,415,71,43,0,0;-210,416,70,44,179,0;-108,589,92,35,136,0;-120,788,86,36,175,0;-67,933,40,19,72,0;-138,887,87,37,73,0;-100,997,87,37,73,0;-62,1107,86,38,72,0;-231,1136,71,92,15,0;-217,1362,78,44,1,1;-100,1557,36,38,19,3;-92,1689,45,41,166,1;-52,1730,46,42,166,1;-171,1738,46,42,29,1;-137,1648,46,42,167,1;-66,1822,42,45,110,1;-219,2042,110,69,62,0;-140,2178,132,51,48,0;-35,2290,88,46,56,1;-118,-1140,45,43,159,0;-47,-972,55,29,70,1;-97,-1083,35,46,158,0;-68,-1029,39,45,159,1;-88,-836,36,32,64,0;4,-861,50,38,68,0;-20,-917,42,42,158,0;-34,-710,36,36,158,0;-69,-794,37,28,70,0;-50,-752,29,37,157,0;55,-752,39,39,72,0;30,-806,54,40,68,1;-116,-593,33,40,156,0;1,-625,34,37,157,0;13,-577,26,41,160,0;-17,-667,37,37,67,0;56,-549,55,27,161,0;-99,-536,39,33,99,0;68,-317,33,36,82,0;-10,-315,37,30,179,0;-33,-407,39,31,179,0;15,-412,30,27,0,0;63,-417,42,36,83,0;18,-43,100,56,1,0;-46,414,70,44,1,0;37,414,70,43,0,0;-3,560,122,33,1,0;-34,877,87,33,74,0;42,1103,86,37,73,0;4,991,87,34,73,1;80,1214,87,37,73,0;-24,1218,87,36,73,0;-19,1774,42,46,75,1;68,2153,31,21,60,3;96,2128,161,92,54,0;21,2348,38,53,53,3;55,2430,43,21,51,3;80,-696,40,37,67,0;111,-645,38,45,163,0;119,-585,67,46,159,0;178,-435,35,33,84,0;117,-417,40,22,171,0;128,-331,41,34,174,0;193,-339,35,41,80,0;186,527,39,40,179,0;180,411,70,44,179,0;108,585,90,36,50,0;151,779,92,30,0,0;126,879,96,30,74,0;175,986,91,30,73,0;215,1982,91,29,55,1;149,1997,45,28,148,1;189,2309,29,20,50,1;138,2473,29,49,144,3;183,2546,45,29,132,0;156,2526,57,29,134,0;212,2592,36,33,132,0;224,-454,13,16,88,0;312,-454,51,24,174,0;240,-447,62,38,173,0;255,-349,34,25,80,1;303,-361,36,48,81,0;345,408,70,43,179,1;263,405,70,36,0,0;262,549,45,40,89,0;229,597,39,39,57,0;309,548,45,40,88,0;347,598,39,38,10,0;268,968,97,34,74,0;223,863,96,30,74,0;295,1079,97,33,73,0;343,1181,97,30,73,0;236,1158,97,30,73,0;351,2120,33,23,93,0;276,2059,29,93,90,0;258,2260,35,24,157,1;308,2254,43,26,69,1;229,2336,31,27,46,3;301,2370,15,14,41,0;286,2396,31,19,42,1;315,2425,28,22,43,1;257,2366,32,27,46,3;336,2319,30,27,58,0;355,2448,36,33,39,0;306,2716,41,26,32,3;266,2641,66,55,144,0;338,2671,37,27,133,2;357,-368,41,32,82,0;427,407,70,43,0,0;401,521,40,39,0,1;398,600,39,38,86,0;448,583,40,39,55,0;412,762,84,37,0,0;493,846,84,37,73,0;380,856,84,37,71,0;465,1073,83,37,70,1;391,2118,38,28,2,1;371,2054,39,25,112,0;476,2044,22,38,91,1;446,2133,38,21,179,0;400,2214,47,28,150,1;425,2242,32,61,48,1;449,2281,66,34,128,0;471,2325,28,38,30,1;435,2418,32,26,30,1;361,2354,37,19,42,0;398,2394,41,24,125,1;473,2437,27,37,115,1;389,2477,29,30,42,0;425,2506,40,28,37,2;468,2535,28,28,122,1;459,2708,18,7,34,0;446,2726,41,131,123,0;363,2601,36,27,121,2;624,532,103,93,134,1;637,787,105,46,18,1;547,1009,83,38,74,0;593,1151,82,36,77,0;503,1184,82,36,75,0;629,2344,61,90,102,1;616,2419,38,33,27,1;541,2321,35,36,127,0;508,2557,35,29,122,2;628,2541,44,36,118,2;513,2464,31,28,25,1;551,2495,32,29,25,0;592,2515,35,26,29,1;631,2635,40,27,27,2;592,2608,42,34,109,2;547,2584,32,38,25,2;594,2803,37,27,24,1;533,2788,37,37,33,3;582,2737,35,23,113,3;616,2755,35,19,22,1;731,907,38,33,153,2;742,1027,105,46,28,0;758,2387,43,38,62,0;662,2444,38,37,27,1;642,2406,21,21,27,1;694,2381,34,45,28,1;670,2562,33,21,110,1;704,2470,30,37,114,1;720,2582,36,30,18,2;673,2659,38,31,23,2;754,2697,29,22,112,2;760,2604,28,30,18,1;717,2671,33,28,19,1;739,2831,37,33,19,0;693,2818,34,36,106,0;645,2805,32,33,110,0;857,1196,137,53,70,0;859,1465,38,31,36,1;904,1484,37,31,31,0;858,2378,31,37,88,1;904,2366,37,32,72,0;809,2380,28,35,170,0;884,2472,27,37,84,1;797,2513,33,25,15,0;901,2547,37,42,17,1;844,2534,29,30,112,0;821,2468,22,32,87,0;804,2618,31,28,108,2;799,2705,43,37,111,2;891,2647,18,19,106,0;847,2629,33,23,14,1;831,2848,37,34,15,2;831,2728,29,21,112,0;786,2833,35,39,16,1;880,2738,36,22,105,0;878,2856,35,28,108,1;1032,1389,134,54,34,0;1034,2420,42,32,170,0;944,2344,39,37,157,0;1042,2300,45,38,76,0;999,2320,37,32,167,0;1002,2520,43,43,24,1;943,2456,38,42,78,0;941,2569,36,27,18,0;989,2444,31,35,75,0;989,2585,28,40,100,0;973,2679,32,29,11,1;930,2663,34,33,103,2;1019,2686,37,32,12,1;927,2741,34,21,10,3;920,2878,35,27,15,1;968,2879,41,38,13,1;1012,2892,33,29,14,0;1213,1533,137,55,33,0;1141,2289,31,42,77,1;1095,2402,29,31,35,0;1148,2389,30,44,169,0;1090,2303,28,40,76,0;1091,2478,59,44,7,1;1124,2566,34,28,7,0;1102,2461,25,14,4,1;1143,2520,28,22,79,1;1063,2702,28,27,1,1;1079,2605,35,30,12,0;1131,2620,29,23,12,1;1108,2705,36,33,8,2;1057,2904,31,31,6,0;1105,2908,34,37,96,0;1056,2786,38,35,101,2;1094,2788,38,23,96,1;1161,2763,31,30,5,1;1152,2806,51,22,6,3;1171,2712,39,27,10,1;-2466,-2148,29,22,47,1;-2433,-2185,44,19,47,2;-2540,-2125,41,18,137,1;-2565,-2136,23,18,46,4;-2500,-2111,39,25,138,2;-2566,-1941,33,22,48,3;-2405,-1975,36,35,47,1;-2572,-2024,19,15,137,3;-2409,-2029,40,24,45,3;-2524,-1917,45,38,143,1;-2471,-2039,20,20,131,3;-2404,-1780,38,19,63,3;-2428,-1820,46,38,142,0;-2483,-1892,40,30,137,3;-2469,-1844,39,36,142,2;1187,2270,40,26,165,0;1256,2267,57,53,112,0;1189,2386,36,36,170,0;1277,2361,32,29,169,1;1291,2310,37,34,149,1;1293,2400,39,33,168,0;1199,2569,38,25,97,1;1203,2502,37,31,92,0;1304,2549,39,29,112,0;1197,2442,37,42,69,0;1188,2620,33,39,6,1;1281,2635,28,21,14,0;1267,2770,24,30,3,2;1262,2819,36,25,2,0;1262,2724,35,22,2,1;1197,2918,38,29,3,0;1288,2930,37,33,1,0;1243,2923,30,28,93,0;1455,1712,160,91,27,0;1408,2446,46,34,89,0;1406,2548,38,32,179,0;1320,2438,32,28,24,1;1364,2448,34,38,178,1;1361,2542,35,26,179,1;1369,2617,26,10,0,0;1408,2630,50,30,89,0;1327,2634,33,26,2,0;1369,2636,30,27,179,0;1362,2816,38,26,90,1;1370,2735,27,31,1,0;1407,2746,57,23,93,1;1329,2738,34,30,96,1;1407,2815,28,40,178,2;1381,2938,38,37,90,0;1336,2933,33,35,92,0;1428,2936,34,33,2,2;1487,2546,32,21,89,0;1539,2544,32,36,89,0;1524,2448,46,38,179,0;1588,2544,38,27,179,0;1581,2436,34,31,89,0;1461,2447,41,46,89,0;1491,2612,27,27,89,0;1496,2700,35,31,89,0;1493,2655,35,27,89,0;1548,2816,38,33,89,2;1494,2748,44,35,89,1;1498,2800,40,29,116,0;1575,2946,28,34,1,0;1524,2941,39,38,89,0;1475,2936,42,40,1,0;1689,1786,159,94,1,1;1751,2065,71,151,106,0;1694,2438,57,41,104,1;1639,2421,31,38,89,2;1637,2543,39,30,179,1;1639,2602,37,26,89,0;1638,2690,38,26,179,0;1622,2645,35,27,90,1;1728,2690,33,41,90,0;1696,2811,45,42,91,0;1599,2817,32,39,90,1;1646,2811,48,41,89,1;1720,2942,34,31,179,0;1622,2938,40,39,91,1;1793,2473,42,34,15,0;1727,2553,29,31,89,0;1746,2452,46,50,16,1;1736,2597,30,44,1,1;1744,2812,44,31,89,2;1842,2805,39,46,179,2;1794,2809,35,33,89,0;1823,2948,34,38,90,0;2001,1822,149,126,0,1;1994,2050,155,97,28,0;1862,2085,27,19,120,0;1964,2507,34,40,91,1;1909,2497,54,40,91,0;1959,2484,22,9,178,1;1956,2640,37,33,91,0;1869,2642,43,27,91,1;1878,2691,39,29,91,1;1959,2592,28,39,89,1;1947,2685,67,31,0,1;1890,2814,36,26,179,0;1935,2811,36,33,176,2;1980,2800,42,36,83,2;1920,2957,84,36,179,1;2101,1802,21,15,179,0;2079,2526,39,36,163,0;2035,2487,39,34,7,0;2034,2637,50,41,66,0;2087,2627,38,34,137,0;2102,2572,28,38,2,0;2068,2774,36,35,68,2;2024,2789,36,27,74,0;2110,2756,45,41,69,0;2150,2942,98,284,78,0;2209,1816,155,69,144,0;2236,1851,22,21,138,0;2229,2395,31,37,70,1;2171,2416,39,38,108,0;2232,2561,37,26,68,0;2191,2478,34,38,161,0;2206,2520,38,32,158,1;2234,2698,37,29,53,2;2195,2712,27,27,52,0;2153,2727,32,29,67,0;2366,1801,155,83,88,0;2319,1983,41,10,30,0;2380,1926,26,9,31,0;2313,1925,21,15,120,0;2361,2158,44,45,16,0;2387,2109,34,33,20,0;2342,2217,40,30,103,0;2326,2271,45,34,108,0;2280,2365,37,29,126,0;2398,2352,34,31,17,0;2405,2405,44,23,107,1;2302,2506,22,20,69,1;2288,2464,28,22,159,2;2432,2589,60,145,70,1;2274,2669,45,28,72,1;2377,2888,84,46,162,1;2488,2148,59,45,7,4;2490,2086,42,40,159,0;2451,2060,45,23,113,1;2475,2205,62,48,1,0;2494,2291,47,39,163,1;2510,2409,61,48,0,1;2500,2349,40,42,89,1;2516,2462,37,32,88,1;2535,2562,51,33,160,0;2499,2884,84,47,162,0;-2388,-2095,35,32,179,2;-2279,-1950,83,69,8,1;-2372,-1796,20,17,58,3;-2338,-1714,31,27,48,3;-2288,-1665,43,35,141,3;-2371,-1748,57,32,144,0;-2306,-1743,32,25,54,3;-2264,-1627,33,23,56,1;-2053,-2031,81,51,90,0;-2048,-2175,13,22,89,0;-2081,-1701,43,23,107,0;-2117,-1720,26,25,95,0;-2015,-1684,26,20,120,2;-2155,-1723,29,23,88,0;-2156,-1653,24,25,50,0;-2000,-1641,24,19,128,2;-2072,-1610,22,27,143,3;-2101,-1584,29,18,146,3;-2130,-1618,32,30,55,3;-2166,-1518,44,44,142,3;-2071,-1563,44,28,143,3;-2043,-1585,25,29,142,3;-2110,-1453,38,32,50,0;-2094,-1410,34,27,144,0;-2143,-1480,30,23,140,3;-2005,-1491,34,15,52,3;-2037,-1492,22,33,145,0;-2022,-1467,30,19,144,3;-2000,-1339,69,38,143,0;-2010,-2572,34,127,179,4;-1930,-2049,88,68,43,1;-1989,-2122,85,35,89,1;-1965,-1841,39,29,89,1;-1890,-1849,24,25,92,1;-1836,-1711,110,31,143,0;-1898,-1733,51,39,138,0;-1957,-1637,17,25,134,3;-1907,-1560,60,24,143,2;-1933,-1610,29,20,52,1;-1983,-1533,40,21,50,0;-1957,-1586,25,20,143,3;-1926,-1451,30,29,50,0;-1823,-1455,121,37,53,0;-1861,-1372,42,41,53,0;-1898,-1416,39,21,47,3;-1914,-1299,25,20,142,3;-1954,-1271,15,16,52,3;-1831,-1311,85,26,141,0;-1967,-1251,32,22,52,3;-1973,-1299,50,32,141,1;-1875,-1122,16,13,155,3;-1846,-1247,188,77,143,1;-1918,-2417,37,128,87,1;-1722,-2112,37,37,179,0;-1828,-2101,30,39,0,0;-1826,-2166,42,32,91,1;-1717,-1987,39,34,3,1;-1827,-2040,38,36,179,0;-1808,-1930,28,27,179,0;-1825,-1979,41,30,89,0;-1824,-1825,24,24,91,0;-1740,-1834,30,21,101,1;-1823,-1647,67,38,142,0;-1734,-1570,53,32,142,1;-1692,-1526,79,55,53,1;-1768,-1362,59,20,143,0;-1737,-1345,38,40,53,1;-1763,-1156,218,61,144,1;-1731,-1115,186,27,143,1;-1828,-1165,16,19,151,3;-1689,-941,94,48,63,0;-1814,-1043,21,21,160,1;-1824,-2347,127,36,90,1;-1706,-2269,38,127,68,0;-1629,-2049,33,31,143,1;-1587,-2093,36,26,140,1;-1625,-1925,44,25,139,0;-1667,-2017,34,32,141,0;-1584,-1963,40,19,139,1;-1644,-1774,25,24,52,1;-1611,-1802,31,29,142,0;-1679,-1882,47,26,144,0;-1671,-1750,27,33,56,0;-1603,-1693,34,29,47,0;-1668,-1636,45,26,139,2;-1632,-1666,26,38,51,1;-1603,-1575,32,21,48,0;-1588,-1485,32,18,47,0;-1610,-1359,55,54,152,1;-1627,-1444,38,32,56,0;-1625,-1164,44,18,60,1;-1657,-812,34,33,50,1;-1560,-725,37,109,54,0;-1569,-785,64,33,141,0;-1613,-749,34,33,52,1;-1592,-2239,127,40,70,1;-1445,-2073,30,29,141,0;-1456,-2192,31,29,48,0;-1541,-2122,33,31,144,1;-1502,-2161,41,32,140,0;-1497,-2033,40,28,145,1;-1456,-1924,29,26,149,0;-1542,-1998,46,25,140,1;-1452,-1816,33,27,51,0;-1515,-1872,27,22,139,1;-1487,-1900,30,24,147,1;-1580,-1823,29,20,142,0;-1550,-1850,31,29,145,0;-1483,-1794,31,29,51,0;-1573,-1717,33,31,139,0;-1482,-1674,33,26,49,0;-1544,-1738,28,17,152,0;-1514,-1649,35,26,54,0;-1511,-1767,33,25,146,1;-1455,-1697,33,22,143,1;-1513,-1540,20,24,48,0;-1573,-1598,34,23,54,0;-1521,-1508,25,22,59,0;-1559,-1506,26,23,51,1;-1481,-1572,27,21,52,0;-1448,-1611,21,14,143,0;-1520,-1420,37,19,144,0;-1551,-1403,16,31,142,0;-1499,-1466,23,25,47,0;-1458,-1476,34,18,54,0;-1443,-1371,32,22,51,1;-1503,-1323,32,30,57,0;-1498,-1210,71,44,61,0;-1473,-1351,22,21,59,1;-1548,-1007,27,35,66,0;-1521,-923,34,32,141,0;-1503,-837,19,18,3,0;-1499,-669,78,46,140,0;-1476,-549,91,40,134,0;-1448,-488,86,32,142,0;-1427,-2903,30,24,69,2;-1445,-2950,49,28,69,1;-1421,-2223,34,40,141,0;-1351,-2151,34,25,140,1;-1399,-2115,25,49,50,0;-1302,-2038,49,30,158,1;-1330,-1929,34,28,59,4;-1425,-1949,29,25,145,0;-1366,-1997,27,26,142,0;-1394,-1975,27,26,58,0;-1328,-1799,33,32,140,0;-1354,-1899,32,26,144,0;-1426,-1845,41,28,59,0;-1360,-1771,31,31,141,0;-1387,-1872,36,27,144,1;-1395,-1655,23,16,142,0;-1423,-1722,34,32,51,0;-1399,-1743,34,16,54,0;-1373,-1738,23,11,67,0;-1326,-1698,26,20,59,0;-1400,-2848,46,25,71,1;-1355,-2752,42,28,59,1;-1431,-1520,38,25,141,0;-1394,-1628,54,23,143,0;-1420,-1394,25,22,141,0;-1390,-1415,28,27,53,2;-1344,-1438,44,38,49,0;-1422,-1229,30,21,50,0;-1318,-1325,39,24,53,0;-1398,-1252,30,27,141,1;-1345,-1303,37,29,46,1;-1370,-1276,29,26,50,1;-1309,-1202,23,34,143,0;-1367,-1155,36,29,50,1;-1335,-1176,45,28,53,0;-1347,-1135,20,12,138,1;-1377,-1012,70,64,142,1;-1314,-1039,31,36,55,0;-1338,-567,78,29,142,0;-1365,-600,77,30,145,0;-1391,-632,77,30,142,0;-1336,-335,67,53,17,1;-1328,-2702,48,22,68,1;-1278,-169,60,132,90,1;-1335,-2487,36,32,103,1;-1318,-2534,50,30,102,0;-1358,-2381,30,32,5,0;-1351,-2427,40,28,96,0;-1359,-2319,44,27,91,0;-1317,-2231,38,36,167,1;-1333,-2274,32,40,77,4;-1277,-1973,38,25,53,1;-1265,-1840,38,48,53,0;-1229,-1779,22,21,51,0;-1187,-1890,47,26,41,0;-1243,-1651,29,24,52,1;-1206,-1682,30,22,56,0;-1296,-1721,28,32,54,0;-1260,-1752,32,28,140,0;-1247,-1529,30,25,142,1;-1220,-1555,26,26,42,0;-1189,-1575,32,17,50,0;-1168,-1433,30,23,141,0;-1233,-1395,44,27,55,1;-1204,-1420,45,28,48,1;-1196,-1294,47,30,52,0;-1250,-1246,37,29,55,1;-1279,-1226,37,24,52,0;-1287,-1347,37,27,54,1;-1220,-1273,35,18,53,1;-1257,-1364,27,23,51,4;-1166,-1316,39,29,48,0;-1239,-1116,29,28,58,1;-1211,-1138,39,27,48,1;-1182,-1158,39,22,55,0;-1270,-1078,40,22,137,0;-1210,-1007,47,33,142,1;-1252,-981,37,24,149,0;-1255,-926,17,10,11,0;-1289,-872,96,54,93,1;-1290,-950,38,26,141,0;-1220,-816,40,33,73,0;-1303,-2590,45,28,92,0;-1311,-2653,35,29,81,0;-1204,-213,69,25,179,0;-1182,-247,74,12,179,1;-1216,-175,25,14,88,1;-1209,-259,38,74,89,0;-1178,-181,32,12,179,0;-1170,-140,30,30,89,1;-1188,-23,132,139,162,1;-1126,131,133,36,0,0;-1161,-1719,29,22,55,0;-1037,-1687,38,35,144,0;-1069,-1655,25,16,47,0;-1110,-1642,17,29,146,0;-1100,-1763,40,53,54,0;-1160,-1843,40,31,77,0;-1161,-1600,27,23,52,1;-1083,-1505,21,21,138,0;-1133,-1621,25,33,143,0;-1061,-1532,43,29,48,0;-1147,-1465,43,30,51,0;-1049,-1405,45,28,55,1;-1115,-1484,30,30,47,1;-1110,-1361,42,27,51,0;-1083,-1387,34,25,57,0;-1142,-1343,28,27,140,1;-1040,-1277,39,30,53,1;-1065,-1248,31,25,50,0;-1039,-1147,47,30,143,1;-1094,-1224,31,28,52,0;-1121,-1199,29,27,146,0;-1153,-1184,39,30,50,0;-1080,-1110,42,44,52,0;-1163,-1043,39,31,51,0;-1027,-979,41,38,53,1;-1125,-1082,43,30,142,0;-1064,-943,29,39,55,0;-1071,-821,26,29,49,0;-1153,-879,45,39,146,1;-1041,-842,32,30,48,0;-1114,-916,28,30,141,0;-1125,-771,32,27,57,0;-1160,-753,33,19,140,0;-1100,-798,30,27,139,0;-1023,-705,43,28,57,0;-1048,-677,30,27,144,0;-1080,-647,28,27,142,2;-1050,-426,41,93,166,0;-1070,-519,43,92,62,1;-1131,-175,102,25,72,2;-1099,-84,37,26,87,0;-1041,5,42,109,177,2;-1019,190,63,100,164,0;-1083,252,128,40,0,0;-1124,190,32,21,89,3;-1071,411,76,76,0,0;-1033,533,173,48,177,1;-1063,487,31,22,179,1;-1028,652,109,38,77,1;-905,-1526,36,29,144,0;-952,-1620,31,50,146,0;-1031,-1555,29,23,57,1;-999,-1587,41,34,142,0;-996,-1454,44,29,48,0;-915,-1369,32,38,49,0;-966,-1475,33,30,51,0;-1025,-1432,31,27,58,1;-935,-1496,30,28,143,0;-912,-1250,36,33,142,0;-983,-1322,33,30,53,0;-1013,-1302,40,30,57,0;-954,-1345,33,30,59,0;-920,-1198,16,16,53,0;-953,-1214,38,28,142,0;-989,-1181,44,34,52,1;-981,-1016,43,43,54,0;-937,-1046,40,29,140,2;-897,-1085,38,38,50,0;-941,-918,40,27,52,2;-911,-947,31,32,48,0;-974,-890,31,30,51,2;-1006,-870,34,18,56,0;-964,-747,28,27,138,0;-911,-797,37,30,51,0;-995,-727,32,29,141,0;-937,-771,30,28,48,0;-965,-621,41,26,69,0;-946,-566,39,30,67,0;-991,-447,35,20,70,1;-891,-454,50,25,68,0;-920,-508,50,34,68,1;-987,-340,43,92,82,0;-974,-167,33,63,171,0;-918,-86,95,37,179,1;-918,-14,28,61,90,0;-969,368,123,12,179,3;-932,1076,63,43,27,1;-949,453,107,12,0,3;-930,428,67,12,179,3;-990,483,32,22,179,0;-883,699,87,44,168,2;-906,1181,63,45,119,0;-876,1301,45,63,118,1;-856,-1548,43,18,140,0;-885,-1593,50,32,0,0;-808,-1594,52,35,142,0;-817,-1466,28,26,145,0;-789,-1490,30,28,50,1;-840,-1437,35,27,50,0;-869,-1406,42,29,138,0;-829,-1322,40,26,144,0;-783,-1355,40,39,52,0;-868,-1288,42,30,141,0;-825,-1146,31,43,139,0;-855,-1113,29,38,48,0;-793,-1172,46,22,58,1;-761,-1192,26,25,138,0;-782,-1055,40,29,140,3;-846,-1002,27,32,51,0;-814,-1026,32,26,49,0;-878,-974,35,27,51,0;-849,-840,27,27,51,0;-794,-886,30,25,146,0;-767,-912,34,27,54,1;-823,-864,33,30,51,1;-821,-749,35,32,50,1;-774,-757,45,29,67,0;-857,-706,44,38,57,1;-880,-817,30,29,57,0;-872,-621,36,25,67,1;-852,-579,37,35,159,1;-793,-456,36,38,159,0;-833,-538,39,38,160,1;-813,-497,37,37,73,0;-770,-414,38,33,46,0;-840,-349,35,32,47,1;-797,-316,42,32,179,0;-866,-396,40,26,68,0;-839,-174,61,33,89,0;-785,-70,63,32,90,1;-845,6,62,30,89,0;-845,166,83,36,73,1;-812,266,82,36,74,0;-831,582,11,13,165,1;-862,622,49,23,77,1;-755,1393,11,55,77,3;-753,1410,43,11,179,3;-842,1410,64,59,116,1;-805,1567,161,44,26,1;-754,-1508,42,24,52,1;-646,-1528,31,14,132,0;-720,-1527,17,17,48,0;-683,-1546,68,22,179,0;-745,-1392,43,30,141,0;-690,-1265,34,31,139,0;-748,-703,37,24,71,0;-659,-768,34,12,70,0;-703,-821,38,36,86,0;-676,-761,29,36,160,0;-676,-859,35,31,69,1;-655,-718,35,35,156,0;-701,-575,38,35,160,0;-669,-1510,20,11,178,0;-702,-1426,43,30,142,0;-705,-1114,37,30,141,0;-672,-1143,33,27,50,0;-727,-1223,43,34,142,0;-643,-1164,33,30,56,0;-746,-1086,36,27,19,0;-690,-974,49,35,141,1;-626,-1027,38,28,52,1;-654,-1003,36,28,51,0;-737,-932,29,27,138,1;-643,-895,39,25,161,0;-642,-678,35,26,67,0;-622,-635,33,17,72,0;-715,-618,33,36,156,1;-719,-410,29,38,89,0;-674,-312,36,32,179,0;-672,-406,37,38,90,1;-618,-312,34,31,91,0;-627,-407,30,39,91,0;-739,-317,43,29,179,0;-705,-23,62,32,179,0;-610,-21,61,32,0,1;-715,139,83,36,89,1;-648,16,17,10,2,0;-710,27,61,32,179,1;-720,253,82,36,50,1;-601,287,83,36,11,0;-619,432,60,73,179,0;-630,542,196,72,179,1;-723,1163,18,17,87,1;-696,1409,61,11,179,3;-663,1537,132,44,179,0;-603,1649,153,122,144,0;-610,-1502,45,27,91,4;-627,-1465,24,19,91,4;-556,-1360,39,40,51,1;-502,-1402,42,57,119,0;-530,-1256,38,29,50,0;-587,-1210,30,29,141,0;-514,-1117,32,24,54,0;-618,-1189,30,28,141,0;-541,-1095,33,30,58,0;-501,-1003,41,38,69,0;-535,-975,33,45,171,1;-599,-1051,29,35,149,1;-570,-1074,34,28,51,1;-572,-842,40,26,69,0;-491,-886,38,30,70,0;-511,-927,37,29,70,0;-600,-913,34,34,67,0;-554,-797,38,30,66,1;-513,-708,39,35,71,0;-537,-751,38,41,71,0;-589,-592,40,29,66,0;-496,-663,37,39,157,0;-589,-536,35,39,25,1;-557,-317,38,25,179,0;-535,-408,37,37,91,1;-490,-405,38,34,1,0;-497,-321,38,18,179,0;-581,-407,34,37,91,0;-437,-31,47,169,83,1;-587,25,62,32,179,1;-511,414,49,74,0,0;-460,711,214,113,90,2;-562,743,319,67,90,1;-503,1100,60,19,179,2;-486,1153,60,22,179,2;-462,1231,103,69,46,1;-498,1065,31,34,169,1;-471,1802,105,56,39,0;-556,1756,33,21,43,3;-527,1679,95,14,143,0;-555,1659,92,24,145,0;-434,-1357,59,87,53,0;-476,-1306,29,27,147,1;-351,-1254,36,29,147,1;-456,-1177,13,14,144,0;-475,-1145,44,29,140,1;-400,-1211,58,38,141,4;-426,-1061,36,34,73,0;-401,-993,37,32,67,0;-465,-1037,36,32,71,0;-364,-909,35,35,158,0;-471,-843,38,35,69,0;-348,-867,38,33,157,0;-384,-950,37,38,159,0;-437,-760,30,38,158,0;-454,-803,38,33,66,1;-416,-719,35,31,157,0;-472,-620,39,29,67,0;-401,-676,36,25,72,0;-456,-576,37,26,65,1;-382,-635,37,29,67,0;-353,-590,41,28,84,1;-351,-535,44,34,162,1;-436,-317,49,25,1,0;-375,-318,37,21,1,1;-352,-406,37,34,1,0;-444,-408,39,36,89,0;-398,-408,38,33,179,0;-359,418,13,12,92,1;-343,554,56,79,90,1;-388,888,87,32,70,0;-462,882,124,49,90,2;-411,1150,27,21,170,3;-413,1379,78,42,127,1;-375,1502,78,44,65,1;-312,1361,78,43,179,1;-312,1927,108,131,137,1;-288,-970,38,35,67,0;-307,-1011,37,32,68,0;-327,-1052,31,36,156,0;-270,-928,36,30,68,0;-233,-844,37,34,66,0;-327,-826,32,34,66,0;-250,-886,38,35,68,0;-287,-743,34,31,163,0;-272,-701,36,37,157,0;-211,-804,39,39,66,0;-307,-785,35,33,70,1;-222,-572,28,23,68,0;-308,-406,28,34,0,0;-317,-318,21,39,90,1;-261,-407,37,31,1,0;-253,-318,38,24,1,1;-341,-37,12,11,178,1;-226,-1331,39,31,31,0;-287,-1304,33,28,55,1;-314,-1280,27,30,145,1;-231,-619,28,38,157,0;-254,-658,37,38,157,0;-292,417,70,43,0,0;-270,911,30,27,169,0;-324,1092,22,18,108,1;-291,1228,82,70,140,1;-283,1539,78,43,155,1;-2645,-2031,52,39,137,0;-2618,-1994,35,21,43,3;-165,-1244,44,35,158,1;-191,-1287,38,33,67,0;-151,-1193,40,33,66,0;-201,-1085,33,27,68,1;-181,-1044,38,28,66,0;-163,-1003,36,29,66,0;-130,-917,37,36,157,1;-149,-958,38,35,67,1;-177,-719,36,32,73,1;-195,-761,36,29,73,0;-157,-679,37,32,72,0;-131,-640,37,44,68,1;-188,-528,56,26,14,1;-2331,-2312,39,36,89,4;-2329,-2223,37,32,179,1;-2332,-2266,39,36,179,0;-2392,-2256,41,29,48,1;2646,2752,45,50,151,1;-2229,-2086,42,54,90,0;-2186,-1690,26,39,142,0;-2210,-1725,30,27,146,3;-2206,-1555,41,29,51,3;-2231,-1594,45,30,141,2;-2223,-2348,36,20,179,1;-2230,-2394,34,34,89,4;-2228,-2303,28,36,179,0;-2224,-2257,41,35,179,0", "dmg": "-2067,-1479,14,4,142,2;-2060,-1469,19,14,52,2;-1626,-1286,14,14,56,1;-1505,-1381,33,14,141,6;-1506,-1380,35,14,141,7;-1280,-714,20,14,146,1;2346,2777,14,14,92,1;-1998,-1590,14,9,139,4;-1971,-1558,33,14,49,4;-1977,-1565,29,14,49,4;-2001,-1593,14,1,139,4;-1932,-1514,14,9,139,4;-2018,-1612,14,3,139,3;-2007,-1599,17,14,49,4;-2009,-1602,23,14,49,4;-2018,-1612,14,3,139,2;-2019,-1613,14,2,129,3;-2019,-1613,14,2,129,2;-2024,-1617,14,10,128,3;-2032,-1623,14,10,128,4;-2024,-1617,14,10,128,2;-2036,-1417,91,14,142,1;-1847,-1571,14,11,51,1;683,1292,14,6,103,3;669,1290,25,14,10,3;653,1287,14,6,95,3;619,1285,24,14,1,3;-332,1717,14,11,53,1;-815,491,18,14,177,1;-2599,-2104,14,6,137,1;-2585,-2090,34,14,47,1;-2574,-2077,14,1,135,1;-2552,-2054,62,14,47,1;-2513,-2009,58,14,51,1;-2484,-1975,31,14,47,1;-2469,-1959,14,13,137,1;-2452,-1941,37,14,46,1;-2436,-1925,14,8,137,1;-2421,-1909,36,14,47,1;-2398,-1884,33,14,47,1;-2383,-1868,14,11,137,1;-1175,-530,14,14,61,1;-1166,-514,14,14,56,1;1449,2868,14,12,179,1;-966,44,14,12,87,1;-1404,-916,21,14,148,1;-1393,-923,14,7,58,2;-1389,-925,14,2,59,2;-1386,-927,14,4,50,2;-1317,-985,24,14,140,5;-1345,-962,95,14,140,5;-1383,-930,14,4,50,2;-1306,-994,14,4,51,5;-1304,-995,14,10,51,5;-1518,-1107,15,14,149,1;-2536,-2027,14,14,48,1;-2526,-2036,14,13,50,1;110,2267,14,3,57,1;102,2272,17,14,146,1;121,2292,14,14,40,1;127,2286,14,4,49,1;-1964,-1424,59,14,52,2;-1935,-1387,35,14,52,2;-1921,-1369,14,5,142,3;-1922,-1370,14,8,142,2;-1918,-1366,14,3,142,3;-1918,-1366,14,3,142,2;-1916,-1363,14,4,142,3;-1882,-1320,14,8,142,4;-1889,-1329,30,14,52,4;-1908,-1352,32,14,52,2;-1877,-1314,14,8,142,4;-1875,-1312,14,14,142,4;-1723,-1433,14,11,58,1;-1422,-1673,28,14,141,3;-2238,-1777,14,11,31,1;1204,2855,17,14,97,1;-579,1241,14,14,72,1;-2014,-1744,14,13,28,1;-1767,-1208,14,5,49,2;-1776,-1200,19,14,139,2;-1794,-1183,32,14,135,2;-1734,-1288,14,12,50,4;-1624,-1257,14,13,55,1;-985,159,92,14,73,3;-964,227,25,14,73,3;-989,147,118,14,73,2;-1765,-1202,14,12,140,2;-1754,-1189,22,14,50,2;-967,82,14,14,77,1;-990,87,33,14,167,2;-1120,88,42,14,2,3;-1098,88,86,14,2,1;-1033,90,45,14,2,1;-1008,91,14,3,92,2;-915,237,16,14,162,1;-1462,-1014,17,14,153,1;-1448,-1021,16,14,153,2;-1430,-1033,28,14,142,2;-1697,-1394,16,14,148,1;-1682,-1403,21,14,148,2;-1664,-1414,20,14,147,2;-1666,-1434,34,14,54,2;-1677,-1452,14,9,164,2;-1542,-1305,49,14,47,1;-1662,-1368,14,13,62,1;-1674,-1361,18,14,152,1;-1626,-1390,73,14,148,1;-1593,-1406,14,9,151,1;-1575,-1374,64,14,61,2;-1571,-1277,58,14,58,2;-1496,-1158,56,14,58,1;-1617,-983,101,14,57,2;-1513,-1069,14,13,57,1;-1536,-1054,14,7,57,2;-1393,-879,73,14,56,1;-1360,-828,49,14,59,1;-1344,-800,14,14,149,1;-1322,-763,72,14,59,1;-1296,-720,28,14,59,1;-1265,-664,99,14,62,1;-1225,-597,58,14,54,1;-1199,-558,36,14,59,1;-1185,-535,18,14,60,1;-1177,-519,19,14,63,1;-1167,-499,24,14,64,1;-1148,-461,61,14,64,1;-1122,-398,75,14,72,1;-1107,-352,23,14,71,1;-1101,-334,14,13,161,1;-1090,-306,48,14,71,1;-1076,-264,40,14,72,1;-1069,-241,14,9,161,1;-1044,-166,150,14,71,1;-1015,-81,28,14,72,1;-1009,-61,15,14,72,1;-989,-5,104,14,70,1;-970,50,14,12,162,1;-964,68,26,14,72,1;-933,157,164,14,71,1;-886,299,135,14,72,1;-862,369,14,13,162,1;-851,406,65,14,74,1;-837,455,38,14,72,1;-828,482,19,14,72,1;-823,495,14,8,161,1;-815,519,43,14,71,1;-793,585,97,14,71,1;-762,674,91,14,71,1;-734,759,87,14,71,1;-703,849,103,14,71,1;-686,899,14,3,162,1;-678,927,54,14,73,1;-657,990,80,14,72,1;-632,1065,78,14,71,1;-596,1170,145,14,72,1;-570,1248,19,14,72,1;-562,1272,30,14,71,1;-555,1293,15,14,71,1;-543,1328,57,14,71,1;-521,1388,71,14,69,1;-508,1423,14,4,159,1;-494,1454,63,14,66,1;-480,1485,14,6,154,1;-464,1518,67,14,64,1;-438,1568,45,14,61,1;-421,1598,23,14,61,1;-400,1633,59,14,58,1;-369,1679,51,14,55,1;-346,1710,28,14,50,1;-302,1767,116,14,53,1;-234,1856,107,14,52,1;-171,1938,101,14,52,1;-100,2029,129,14,52,1;-53,2091,27,14,52,1;-11,2145,111,14,52,1;37,2207,45,14,52,1;56,2232,19,14,52,1;78,2258,49,14,49,1;96,2279,14,5,140,1;107,2289,25,14,43,1;125,2311,32,14,55,1;160,2349,71,14,45,1;189,2378,14,11,135,1;199,2388,19,14,43,1;215,2403,24,14,43,1;227,2414,14,8,133,1;244,2429,37,14,42,1;260,2444,14,7,132,1;277,2458,38,14,40,1;295,2474,14,12,130,1;304,2481,14,9,128,1;308,2484,14,2,128,1;319,2492,23,14,38,1;333,2503,14,13,128,1;341,2510,14,8,128,1;354,2519,23,14,38,1;373,2534,26,14,38,1;383,2542,14,1,122,1;394,2550,25,14,35,1;412,2563,21,14,35,1;425,2572,14,9,125,1;443,2584,37,14,34,1;466,2599,17,14,33,1;478,2608,14,13,123,1;491,2615,17,14,33,1;505,2624,17,14,30,1;525,2636,30,14,30,1;554,2651,36,14,27,1;573,2661,14,7,117,1;584,2667,18,14,28,1;594,2672,14,3,117,1;607,2679,28,14,27,1;628,2690,18,14,28,1;641,2696,14,9,115,1;651,2701,14,14,115,1;678,2714,46,14,25,1;704,2726,14,9,115,1;713,2730,14,11,119,1;719,2734,14,3,113,1;734,2740,29,14,23,1;753,2748,14,14,113,1;764,2752,14,8,111,1;769,2754,14,3,110,1;784,2760,29,14,20,1;809,2770,26,14,22,1;829,2777,16,14,20,1;840,2781,14,8,110,1;857,2787,27,14,18,1;884,2796,30,14,18,1;902,2802,14,8,109,1;912,2805,14,14,105,1;928,2809,19,14,13,1;962,2819,53,14,17,1;992,2827,14,9,103,1;1004,2830,18,14,13,1;1023,2835,21,14,14,1;1040,2839,14,13,103,1;1052,2841,14,12,100,1;1068,2844,21,14,10,1;1091,2848,24,14,10,1;1108,2851,14,12,100,1;1119,2853,14,11,99,1;1156,2858,63,14,7,1;1191,2862,14,6,96,1;1198,2863,14,9,97,1;1210,2864,15,14,5,1;1234,2867,32,14,6,1;1266,2869,33,14,3,1;1287,2870,14,9,96,1;1298,2871,14,13,93,1;1323,2873,38,14,3,1;1357,2874,31,14,1,1;1384,2874,22,14,1,1;1407,2875,24,14,1,1;1420,2875,14,3,90,1;1434,2874,25,14,179,1;1448,2874,14,3,90,1;1479,2873,60,14,178,1;1522,2872,26,14,179,1;1547,2872,23,14,179,1;1564,2871,14,11,89,1;1584,2872,28,14,3,1;1966,2857,14,1,81,1;1975,2856,16,14,167,1;1997,2850,29,14,167,1;2029,2843,38,14,167,1;2063,2835,31,14,166,1;2102,2825,50,14,165,1;2139,2815,26,14,164,1;2163,2808,24,14,168,1;2197,2801,45,14,168,1;2225,2795,14,12,81,1;2243,2792,23,14,171,1;2275,2788,41,14,174,1;2297,2786,14,4,84,1;2322,2785,46,14,178,1;2356,2784,21,14,1,1;2372,2785,14,12,96,1;-1831,-1572,16,14,141,1;-349,1696,14,14,59,1;226,1226,17,14,75,4;2274,1718,15,14,177,3;2298,1717,14,9,87,4;2592,2777,14,6,99,4;2078,2915,98,14,167,3;2092,2912,153,14,167,2;2345,2789,14,11,8,1;2382,2843,14,13,68,3;2338,2861,14,12,68,4;2385,2842,95,14,158,2;2458,2829,59,14,9,2;2541,2841,36,14,9,4;2506,2836,38,14,9,2;2488,2829,14,7,10,2;2432,2908,14,7,61,3;2426,2911,21,14,151,2;2436,2905,14,3,71,3;2438,2905,14,6,71,2;2403,2625,14,4,23,3;2403,2627,14,1,5,3;2395,2549,14,14,67,3;2422,2537,14,13,67,4;2527,2498,32,14,161,4;2163,2874,41,14,81,2;2153,2817,14,13,169,1;2159,2848,14,12,169,2;-1781,-1400,18,14,142,3;-1766,-1412,14,11,52,3;-1739,-1433,14,13,52,1;-1729,-1290,14,3,130,4;-1763,-1334,14,10,142,3;-1740,-1305,34,14,52,4;-1880,-1238,14,9,49,3;-1886,-1233,14,13,49,3;-1777,-1327,31,14,139,3;-1788,-1199,14,14,138,2;-1780,-1149,50,14,141,2;-1880,-1611,14,12,50,1;-1573,-1081,14,10,52,4;-1606,-1056,99,14,142,2;-1665,-1007,56,14,139,2;-1525,-1029,55,14,60,2;-1558,-1076,23,14,50,4;-1553,-1069,45,14,50,2;-1922,-1676,15,14,139,1;-1888,-1642,17,14,141,1;-1810,-1708,32,14,140,3;-1775,-1682,14,12,139,3;-1841,-1667,14,6,52,3;-1841,-1662,14,9,142,3;-1834,-1652,14,14,142,3;-1876,-1628,16,14,143,1;-1845,-1653,16,14,141,3;-1792,-1522,16,14,144,1;-1775,-1501,14,13,54,1;-1453,-1103,14,4,57,2;-1441,-1111,26,14,147,2;-1427,-1120,14,6,57,2;-1420,-1044,14,4,149,2;-1424,-1050,14,11,149,2;-1431,-1062,17,14,59,2;-1445,-1086,37,14,59,2;-1420,-1080,36,14,147,2;-1411,-1046,18,14,153,2;-1395,-1054,18,14,153,2;-1663,-948,94,14,60,2;-1615,-924,61,14,146,2;-1550,-973,102,14,141,2;-1476,-912,14,3,51,1;-1470,-912,14,11,98,1;-1427,-925,14,9,57,1;-1445,-957,14,12,51,1;-1475,-917,14,10,6,1;-1518,-736,18,14,138,4;-1405,-825,21,14,143,1;-1378,-845,14,13,53,1;-1329,-818,14,6,58,1;-1340,-811,18,14,148,1;-1323,-821,14,8,57,1;-1333,-844,14,11,148,3;-1326,-832,14,12,148,3;-1325,-832,20,14,58,1;-1358,-884,103,14,58,2;-1426,-758,93,14,145,1;-1450,-714,46,14,51,1;-1399,-723,91,14,143,1;-1361,-757,14,14,19,1;-1359,-768,14,9,179,1;-1361,-775,14,7,140,1;-1366,-781,14,8,140,1;-1373,-785,14,9,98,1;-1383,-785,14,10,85,1;-1362,-779,14,3,55,1;-1345,-791,14,12,55,1;-1429,-604,20,14,51,4;-1245,-619,14,6,57,1;-1296,-632,14,4,152,3;-1291,-625,14,14,142,3;-1213,-571,14,11,54,1;-1251,-542,14,6,53,3;-1210,-526,16,14,140,3;-1194,-539,14,12,50,1;-1295,-390,16,14,143,1;-1245,-429,109,14,142,1;-1198,-466,14,12,53,1;-1167,-485,14,14,61,1;-1199,-453,20,14,68,1;-1104,-327,14,12,76,1;-1097,37,14,12,89,3;-1080,37,14,10,89,3;-1070,37,14,12,95,3;-1189,-199,23,14,0,4;-1167,-199,14,13,90,4;-1177,-199,45,14,0,2;-1204,-199,14,8,92,4;-1232,-199,44,14,2,4;-1206,-199,14,11,92,4;-1227,-199,55,14,2,2;-1267,-200,25,14,1,4;-1267,-200,25,14,1,2;-1283,-204,14,10,133,4;-1283,-204,14,10,133,2;-1287,-210,14,7,166,4;-1287,-210,14,7,166,2;-1287,-216,14,6,22,4;-1287,-216,14,6,22,2;-1286,-219,14,1,50,4;-1284,-221,14,6,50,2;-1266,-224,25,14,175,4;-1267,-224,28,14,175,2;-1249,-227,14,8,60,2;-1242,-232,14,9,48,2;-1232,-235,15,14,2,2;-1196,-235,57,14,179,2;-1149,-236,36,14,179,2;-1075,-237,14,14,89,1;-1115,-236,32,14,179,2;-1161,-216,14,9,161,4;-1161,-217,39,14,71,2;-1150,-185,28,14,71,2;-1113,-77,26,14,71,4;-1127,-118,114,14,71,2;-1103,-45,14,12,162,3;-1108,-62,14,5,162,4;-1105,-50,29,14,72,2;-1080,24,26,14,72,3;-1089,-4,14,11,162,4;-1090,-8,60,14,72,2;-1179,-32,14,5,86,3;-1154,-33,35,14,176,4;-1141,-34,81,14,176,2;-1186,-34,14,10,121,3;-1186,-34,14,10,121,2;-1190,-44,14,14,0,3;-1190,-44,14,14,0,2;-1186,-54,14,10,51,3;-1186,-55,14,11,51,2;-1177,-58,14,2,85,3;-1169,-59,22,14,175,3;-1114,-64,14,10,85,4;-1137,-62,37,14,175,4;-1145,-61,72,14,175,2;-1107,-64,14,4,96,4;-1089,-62,39,14,6,2;-1018,-67,14,13,82,1;-1052,-63,36,14,172,2;-1225,-244,14,7,178,4;-1225,-248,14,12,178,4;-1225,-249,28,14,88,2;-1188,-263,14,14,179,3;-1183,-263,85,14,179,2;-1254,-213,25,14,94,4;-1254,-213,25,14,94,2;-1199,-185,28,14,88,4;-1199,-185,28,14,88,2;-1188,-171,22,14,179,4;-1172,-171,53,14,179,2;-1058,-24,14,8,162,4;-1057,-22,80,14,72,2;-1123,-213,14,7,161,3;-1088,-112,15,14,71,4;-1101,-148,186,14,71,2;-1136,-250,29,14,73,2;-931,376,36,14,179,3;-957,376,15,14,179,4;-868,375,16,14,179,1;-1027,421,14,12,179,4;-935,438,69,14,179,3;-887,437,34,14,179,3;-849,437,14,12,89,1;-827,500,14,11,75,1;-814,541,14,13,71,1;-914,613,92,14,75,2;-954,625,82,14,76,2;-952,777,14,5,119,2;-947,779,14,5,98,2;-942,779,14,5,79,2;-937,777,14,5,58,2;-933,774,14,5,39,2;-931,769,14,5,18,2;-930,765,14,4,0,2;-930,762,14,1,177,2;-930,761,14,2,161,2;-931,759,14,3,159,2;-933,756,14,5,141,2;-936,752,14,5,124,2;-941,750,14,5,105,2;-945,750,14,5,88,2;-950,751,14,5,69,2;-954,753,14,5,52,2;-957,757,14,5,33,2;-959,761,14,5,15,2;-959,765,14,5,178,2;-958,770,14,5,158,2;-956,774,14,5,138,2;-989,775,61,14,166,2;-883,749,61,14,167,1;-922,758,18,14,167,2;-754,719,14,13,77,1;-881,949,14,1,159,3;-881,948,14,0,142,3;-883,946,14,5,142,4;-886,943,14,5,124,4;-890,941,14,5,105,3;-888,942,14,0,105,4;-895,941,14,5,88,3;-899,942,14,5,69,3;-903,944,14,5,52,3;-906,946,14,2,33,3;-942,973,14,11,74,8;-718,909,14,13,76,4;-693,903,14,14,76,1;-809,858,38,14,75,3;-800,976,144,14,166,1;-728,967,17,14,75,1;-723,985,21,14,75,2;-714,1020,14,6,165,3;-712,1028,14,11,165,2;-717,1009,28,14,75,2;-831,1289,14,9,166,2;-828,1300,14,13,166,2;-823,1323,34,14,76,2;-834,1339,31,14,179,2;-850,1334,14,12,171,2;-840,1311,41,14,121,2;-573,1259,14,13,72,1;-807,1019,161,14,165,2;-726,997,14,11,75,2;-795,1056,176,14,165,2;-839,1108,63,14,166,2;-775,1177,28,14,177,2;-820,1185,64,14,166,2;-803,1120,39,14,76,2;-794,1158,40,14,76,2;-829,1147,64,14,166,2;-790,1297,76,14,165,2;-796,1337,46,14,176,2;-734,1330,78,14,172,2;-638,1323,114,14,179,2;-694,1364,25,14,0,3;-671,1365,14,9,90,3;-696,1364,59,14,0,2;-757,1372,53,14,166,4;-765,1374,82,14,166,2;-666,1364,14,2,162,3;-668,1357,16,14,72,2;-655,1401,37,14,73,3;-664,1370,14,11,163,3;-658,1392,56,14,73,2;-648,1421,14,6,162,3;-643,1439,24,14,72,3;-642,1439,44,14,72,2;-802,1398,30,14,79,2;-795,1436,47,14,79,2;-811,1393,22,14,125,2;-823,1412,24,14,115,2;-828,1425,14,4,10,2;-827,1432,14,11,171,2;-826,1440,14,4,150,2;-823,1443,14,6,141,2;-819,1448,14,6,129,2;-806,1454,22,14,23,2;-793,1459,14,5,100,2;-784,1460,15,14,9,2;-706,1461,140,14,0,2;-629,1460,14,13,89,2;-514,1423,14,12,71,1;-603,1453,41,14,161,2;-653,1418,14,7,92,3;-724,1416,150,14,2,2;-862,1507,40,14,0,1;-895,1507,24,14,0,2;-826,1507,32,14,0,1;-771,1507,78,14,0,2;-637,1505,190,14,179,2;-530,1502,25,14,179,2;-485,1490,14,14,70,1;-510,1499,17,14,160,2;-836,1510,15,14,30,1;-764,1552,34,14,30,2;-741,1533,56,14,107,2;-518,1611,31,14,145,1;-581,1657,69,14,143,1;-538,1625,18,14,143,1;-607,1680,14,4,143,1;-515,1655,72,14,142,1;-466,1617,52,14,143,1;-432,1592,14,12,53,1;-496,1617,37,14,60,1;-530,1556,48,14,61,3;-506,1600,14,3,151,1;-524,1567,73,14,61,2;-542,1533,14,3,179,3;-542,1519,32,14,89,2;-543,1535,14,3,75,3;-554,1538,26,14,165,2;-568,1542,14,2,62,2;-569,1544,14,2,16,2;-569,1546,14,3,171,2;-566,1553,14,13,153,2;-562,1561,14,5,159,2;-560,1566,14,7,155,2;-556,1575,14,13,154,2;-533,1616,14,9,150,1;-544,1596,35,14,60,2;-505,1702,14,3,53,4;-480,1684,65,14,143,2;-366,1846,79,14,144,2;-417,1839,47,14,142,2;-378,1809,53,14,142,2;-501,1745,25,14,141,2;-463,1714,73,14,141,2;-474,1750,43,14,36,2;-428,1786,14,1,129,3;-449,1769,14,6,129,3;-442,1774,38,14,39,2;-422,1792,15,14,48,3;-422,1792,16,14,48,2;-408,1812,32,14,57,2;-444,1678,34,14,53,2;-418,1713,54,14,53,2;-379,1763,74,14,52,2;-345,1807,38,14,53,2;-359,1703,14,11,54,1;-387,1723,37,14,144,2;-342,1877,56,14,143,1;-308,1852,27,14,143,2;-263,1883,103,14,49,2;-296,1840,14,9,19,2;-273,1818,14,14,51,1;-291,1832,14,10,51,2;-194,1999,35,14,52,2;-172,2029,17,14,53,3;-174,2026,33,14,53,2;-218,1995,32,14,143,2;-175,2049,14,14,51,3;-176,2049,30,14,141,2;-146,1983,16,14,142,1;-168,2001,40,14,142,2;-151,2102,95,14,144,2;-101,2088,36,14,51,2;-81,2113,27,14,52,2;-66,2132,22,14,51,2;-46,2156,39,14,51,2;-94,2229,14,12,46,3;-76,2211,14,13,46,3;-87,2223,14,2,46,4;-66,2202,89,14,136,2;-134,2142,14,4,48,4;-113,2123,62,14,138,2;-132,2147,14,1,135,4;-107,2173,19,14,45,4;-133,2147,14,9,135,4;-118,2161,50,14,45,2;-99,2178,14,3,47,4;-79,2160,56,14,137,2;-50,2106,14,14,52,1;-64,2117,21,14,142,2;-59,2245,50,14,143,2;36,2264,14,6,53,3;9,2285,14,11,53,4;22,2275,44,14,143,2;39,2259,14,4,179,3;39,2248,27,14,89,2;26,2232,25,14,9,2;-18,2256,14,3,51,4;-3,2244,42,14,141,2;46,2228,14,11,51,1;40,2233,14,5,51,2;-20,2256,14,3,143,4;-29,2243,34,14,53,2;2,2286,14,6,143,4;-12,2267,25,14,53,4;-7,2273,39,14,53,2;8,2293,14,13,143,4;14,2301,33,14,53,2;304,2489,14,13,28,1;288,2604,14,4,35,3;334,2513,14,13,35,1;387,2662,14,7,34,3;402,2640,47,14,124,1;522,2742,94,14,123,1;431,2631,39,14,32,1;448,2641,14,1,123,1;481,2662,77,14,32,1;530,2692,40,14,32,1;450,2640,14,5,34,1;470,2608,14,11,34,1;437,2657,39,14,121,1;462,2696,14,9,122,3;477,2705,14,8,122,3;465,2698,35,14,32,3;448,2687,14,6,122,4;460,2694,77,14,32,1;503,2698,39,14,123,1;515,2680,14,5,33,1;535,2647,14,10,33,1;627,2778,15,14,116,3;635,2762,14,10,26,3;631,2770,49,14,116,2;643,2743,14,12,16,2;646,2730,14,13,13,2;655,2710,14,13,25,1;650,2720,14,9,25,2;603,2784,27,14,26,4;602,2783,40,14,26,2;632,2732,17,14,21,4;631,2732,30,14,21,2;634,2832,39,14,26,2;629,2796,60,14,115,2;656,2777,32,14,27,2;697,2729,14,11,26,1;682,2759,55,14,116,2;704,2785,14,12,21,2;704,2774,14,12,159,3;704,2774,14,13,159,2;702,2766,14,4,25,3;715,2737,14,10,25,1;707,2755,28,14,115,2;766,2758,14,10,22,1;759,2776,28,14,112,2;796,2770,14,10,19,1;789,2789,31,14,109,2;819,2779,14,10,24,1;811,2797,30,14,114,2;794,2807,23,14,19,2;842,2788,14,11,21,1;836,2803,23,14,111,2;889,2827,14,8,19,4;897,2804,14,8,19,1;891,2819,24,14,109,2;991,2847,14,9,14,3;989,2858,14,3,14,4;995,2831,14,6,14,1;991,2847,26,14,104,2;1012,2835,14,5,12,1;1008,2855,35,14,102,2;1033,2839,14,5,8,1;1030,2859,35,14,98,2;1054,2873,14,5,8,3;1058,2845,14,5,8,1;1055,2862,31,14,98,2;1074,2876,14,13,9,4;1078,2849,14,5,9,1;1075,2867,31,14,99,2;1068,2881,14,10,103,4;1063,2880,20,14,13,2;1419,2880,14,10,177,1;1446,2879,14,10,179,1;1510,2902,14,6,178,4;1510,2878,14,12,178,1;1536,2902,14,5,0,4;1536,2912,14,14,0,4;1536,2878,14,12,0,1;1531,2919,14,9,98,4;1559,2878,14,12,178,1;1282,2875,14,10,2,1;1304,2877,14,11,3,1;1247,2894,14,6,4,3;1249,2873,14,9,4,1;1191,2884,14,4,6,4;1193,2867,14,9,6,1;1190,2890,17,14,96,2;1213,2894,14,11,24,4;1213,2894,14,12,24,2;1217,2869,14,9,5,1;1216,2887,14,3,5,2;1206,2899,14,11,91,4;1200,2899,21,14,1,2;1102,2853,14,6,7,1;1100,2869,25,14,97,2;1115,2884,14,10,99,3;1109,2883,22,14,9,2;1120,2881,14,8,9,3;1124,2858,14,7,9,1;1122,2873,24,14,99,2;1373,2880,14,11,0,1;1394,2880,14,10,1,1;1951,2930,20,14,86,3;1950,2914,52,14,86,2;2291,2867,15,14,68,3;2285,2853,47,14,68,2;2263,2896,37,14,69,3;2253,2870,14,13,159,3;2254,2874,84,14,69,2;2086,2873,153,14,165,2;2199,2844,82,14,167,2;2258,2833,37,14,174,2;2015,2911,36,14,82,2;2478,2846,14,6,36,3;2482,2841,19,14,126,2;2474,2849,14,3,69,3;2449,2859,58,14,159,2;2434,2902,14,8,161,3;2425,2877,17,14,71,2;2433,2899,14,13,161,2;-2602,-2097,15,14,135,1;-2614,-2085,19,14,135,2;-2608,-2066,26,14,45,3;-2609,-2067,33,14,45,2;-2579,-2073,14,13,46,1;-2590,-2062,19,14,136,2;-2476,-1961,14,9,46,1;-2493,-1945,38,14,136,2;-2412,-1893,14,8,48,1;-2427,-1880,32,14,139,2;-2390,-1869,14,8,44,1;-2399,-1860,19,14,134,2;-2391,-1837,14,11,137,4;-2397,-1843,27,14,47,2;-2384,-1837,14,10,47,4;-2370,-1849,14,9,47,1;-2380,-1840,19,14,137,2;-2305,-1801,14,10,32,1;-2347,-1783,14,5,53,3;-2159,-1767,14,11,0,1;-2094,-1742,14,4,12,3;-2094,-1739,14,6,12,3;-2100,-1710,14,9,12,4;-2095,-1734,14,6,12,4;-2109,-1677,14,1,7,3;-2109,-1673,14,7,7,4;-2109,-1664,14,6,176,3;-2110,-1668,14,3,176,4;-2107,-1658,14,7,144,3;-2103,-1655,14,4,107,3;-2097,-1653,14,9,105,3;-2082,-1649,14,8,105,2;-2067,-1642,25,14,26,2;-2052,-1635,14,8,118,2;-2046,-1632,14,6,117,2;-2038,-1627,14,4,118,4;-2042,-1629,14,4,118,2;-2070,-1733,14,12,19,3;-2063,-1752,14,10,19,1;-2024,-1721,14,9,23,3;-2019,-1734,14,10,23,1;-2037,-1715,14,10,113,3;-2035,-1742,14,8,20,1;-2018,-1614,14,2,39,3;-2009,-1626,14,12,39,4;-2013,-1621,17,14,129,4;-2016,-1617,14,10,39,2;-1985,-1606,42,14,142,4;-1999,-1595,14,6,52,4;-2033,-1660,24,14,119,4;-2044,-1641,15,14,119,4;-2047,-1635,14,4,29,2;-1887,-1620,14,11,50,1;-2051,-1625,18,14,145,2;-2033,-1603,14,7,48,3;-2022,-1612,14,6,48,3;-2028,-1607,20,14,138,2;-1956,-1500,14,9,142,1;-2077,-1467,28,14,137,2;-2117,-1488,14,10,51,3;-2107,-1495,34,14,141,2;-1945,-1322,14,5,14,3;-1942,-1332,26,14,104,2;-1932,-1355,14,10,32,3;-1934,-1352,17,14,122,2;-1924,-1363,14,13,54,3;-1924,-1363,14,13,54,2;-1876,-1321,14,11,41,4;-1875,-1322,14,14,41,4;-1869,-1329,14,3,41,2;-1867,-1333,14,6,26,2;-1866,-1338,14,5,0,2;-1871,-1350,14,1,148,3;-1869,-1346,14,11,148,2;-1875,-1355,14,12,139,3;-1875,-1355,14,12,139,2;-1880,-1360,14,1,128,3;-1882,-1362,14,8,128,2;-1889,-1365,14,7,110,2;-1895,-1367,14,6,104,2;-1901,-1368,14,6,86,2;-1917,-1365,14,1,78,3;-1911,-1366,14,14,78,2;2295,2776,20,14,89,1;2231,2786,16,14,83,1;2174,2799,15,14,79,1;2073,2816,14,1,160,1;2076,2823,16,14,70,1;2009,2840,15,14,74,1;2007,2832,14,0,143,1;1980,2840,14,1,5,1;1981,2847,14,14,169,1;1711,2851,14,4,177,3;1710,2846,14,7,164,3;1708,2840,14,5,164,3;1704,2838,14,7,89,3;1570,2867,14,8,176,1;1510,2867,14,10,13,1;872,2783,16,14,105,1;839,2772,17,14,106,1;773,2747,17,14,113,1;750,2737,18,14,109,1;727,2717,14,0,38,1;724,2726,18,14,113,1;651,2685,14,3,25,1;647,2692,14,13,25,1;624,2680,14,13,32,1;627,2674,14,2,22,1;612,2647,14,9,116,3;607,2648,14,5,26,3;598,2666,15,14,115,1;586,2643,14,10,27,3;579,2656,15,14,117,1;516,2622,15,14,120,1;448,2542,14,3,31,3;432,2568,14,14,33,1;387,2538,14,13,36,1;407,2552,14,13,34,1;367,2522,14,12,40,1;349,2507,14,13,41,1;332,2494,14,14,37,1;314,2479,15,14,129,1;296,2465,15,14,130,1;262,2436,15,14,133,1;28,2185,14,13,53,1;-55,2076,14,14,143,1;-545,1299,15,14,165,1;-550,1284,15,14,164,1;-202,1212,14,2,154,4;-203,1210,14,4,135,4;-207,1208,14,4,115,4;-210,1207,14,4,96,4;-212,1207,14,0,78,4;-206,1200,15,14,107,4;-521,564,14,4,90,3;-523,509,23,14,89,3;-523,522,15,14,89,3;-523,547,35,14,89,3;-523,584,40,14,90,3;-523,739,106,14,90,3;-523,874,22,14,90,3;-523,818,35,14,90,4;-662,950,16,14,162,1;-612,594,14,8,179,3;-612,595,14,10,179,3;-622,590,21,14,177,3;-625,590,25,14,177,3;-742,716,14,11,71,1;-294,929,27,14,69,4;-470,1122,29,14,178,4;-428,725,101,14,88,4;-426,784,17,14,88,4;-425,794,16,14,88,4;-424,835,43,14,88,4;-421,893,72,14,86,4;-459,610,30,14,1,4;-507,529,32,14,0,3;-670,454,24,14,90,3;-679,442,16,14,0,3;-670,440,14,2,179,3;-671,407,64,14,89,4;-672,372,14,5,171,4;-674,367,14,6,149,4;-735,360,28,14,179,4;-858,362,14,13,89,1;-819,101,14,1,178,2;-803,144,90,14,69,2;-550,299,37,14,103,2;-559,317,14,11,90,2;-903,234,14,9,75,1;-690,126,14,14,0,3;-690,99,23,14,90,3;-1000,-55,14,12,75,1;-1014,-96,14,13,75,1;-1064,-247,14,14,73,1;-761,-87,30,14,89,3;-793,-24,32,14,176,1;-897,-221,28,14,179,3;-897,-221,28,14,179,3;-811,-180,44,14,89,4;-809,-64,81,14,89,1;-909,13,66,14,176,1;-875,23,23,14,87,1;-962,55,14,12,87,1;-1098,-342,14,10,69,1;-1024,-456,19,14,71,3;-2102,-1775,14,14,2,1;-2097,-1920,14,11,2,5;-2099,-1868,69,14,92,4;-2098,-1880,67,14,92,6;-1942,-1984,103,14,0,4;-1942,-1984,103,14,0,6;-1994,-1979,14,11,0,4;-1994,-1979,14,11,0,6;-1994,-1967,14,11,179,4;-1994,-1960,27,14,89,6;-1993,-1857,143,14,90,5;-1994,-1934,25,14,90,6;-2022,-1971,31,14,177,5;-1996,-1973,14,4,87,4;-2005,-1972,21,14,177,6;-2063,-1969,55,14,177,2;-2212,-1982,14,7,145,3;-2220,-1994,37,14,55,2;-2201,-1965,33,14,58,3;-2201,-1965,33,14,58,2;-2194,-1949,14,6,29,3;-2193,-1950,14,4,29,2;-2124,-1923,54,14,175,5;-2143,-1922,66,14,175,5;-2091,-1926,14,11,85,5;-2088,-1926,14,5,85,5;-2049,-1939,76,14,173,5;-2004,-1945,22,14,173,6;-2085,-1927,14,1,173,5;-2086,-1930,14,8,173,5;-2087,-1936,14,3,173,5;-2088,-1949,26,14,83,2;-2090,-1965,14,6,173,2;-2091,-1973,14,12,173,2;-2093,-1990,14,7,174,3;-2092,-1986,14,14,174,2;-2094,-2003,19,14,84,3;-2095,-2013,39,14,84,2;-2221,-2010,20,14,175,2;-2209,-2011,14,3,89,2;-2174,-2015,68,14,173,2;-2125,-2023,31,14,166,2;-2107,-2030,14,9,46,2;-2201,-1980,16,14,173,3;-2097,-1993,14,8,83,3;-2151,-1986,117,14,173,2;-2185,-1952,14,14,84,3;-2141,-1957,103,14,174,2;-2211,-2019,17,14,88,2;-2321,-1946,16,14,56,4;-2312,-1933,15,14,52,4;-2304,-1924,14,10,135,4;-2287,-1907,14,1,137,4;-2280,-1904,15,14,21,4;-2266,-1900,14,14,101,4;-2255,-1899,14,9,86,4;-2244,-1902,15,14,156,4;-2427,-1928,17,14,138,1;-2420,-1934,14,1,48,2;-2416,-1938,14,11,47,2;-2409,-1947,14,10,31,2;-2407,-1955,14,8,174,2;-2411,-1962,14,9,135,2;-2425,-1991,67,14,137,2;-2458,-1960,17,14,138,1;-2451,-1967,14,3,48,2;-2555,-2096,19,14,126,2;-2568,-2081,15,14,137,1;-2562,-2087,14,2,46,2;-2373,-1858,17,14,43,1;-2361,-1846,17,14,46,1;-2351,-1837,14,12,128,1;-2343,-1831,14,7,128,1;-2332,-1823,20,14,35,1;-2315,-1812,21,14,31,1;-2304,-1806,14,5,116,1;-2295,-1801,17,14,26,1;-2278,-1794,20,14,22,1;-2261,-1788,18,14,17,1;-2243,-1783,18,14,12,1;-2213,-1778,45,14,8,1;-2175,-1774,31,14,3,1;-2158,-1773,14,2,92,1;-2140,-1772,34,14,3,1;-2113,-1770,21,14,9,1;-2097,-1767,14,9,99,1;-2086,-1765,15,14,15,1;-2070,-1760,18,14,19,1;-2054,-1754,15,14,21,1;-2040,-1748,15,14,23,1;-2025,-1742,18,14,23,1;-2008,-1734,20,14,29,1;-1988,-1722,25,14,34,1;-1963,-1702,40,14,39,1;-1938,-1680,27,14,43,1;-1919,-1663,25,14,43,1;-1902,-1646,23,14,50,1;-1894,-1636,14,3,140,1;-1888,-1629,15,14,47,1;-1879,-1619,14,12,141,1;-1859,-1594,51,14,51,1;-1840,-1571,14,10,141,1;-1818,-1542,63,14,52,1;-1789,-1507,27,14,46,1;-1757,-1467,76,14,52,1;-1731,-1434,14,9,142,1;-1716,-1410,47,14,59,1;-1693,-1373,39,14,56,1;-1657,-1319,90,14,56,1;-1625,-1271,25,14,59,1;-1606,-1236,55,14,63,1;-1584,-1197,36,14,59,1;-1568,-1169,29,14,59,1;-1542,-1130,64,14,56,1;-1516,-1088,35,14,61,1;-1488,-1041,73,14,59,1;-1455,-985,58,14,59,1;-1432,-944,37,14,63,1;-1418,-919,20,14,60,1;561,393,14,14,88,4;568,403,19,14,88,4;-1384,-1553,19,14,57,4;247,506,20,14,175,4;228,514,15,14,144,4;229,512,20,14,144,4;221,521,14,6,5,4;221,522,14,8,5,4;-881,482,19,14,169,3;-836,474,14,11,79,1;-878,482,47,14,169,2;-948,489,23,14,176,3;-917,487,22,14,176,4;-930,488,58,14,176,2;-28,1398,35,14,36,4;-12,1409,14,4,126,4;-63,976,15,14,161,3;-1308,-729,14,12,56,1", "roads": "2370,2290 2434,2319 2443,2332 2447,2347 2450,2401 2449,2453;2370,2290 2345,2366 2329,2397 2319,2407 2261,2436 2249,2445 2244,2460 2247,2477 2294,2594;2370,2290 2415,2164 2431,2133;-2266,-1728 -2251,-1702 -2215,-1655;-2266,-1728 -2251,-1745 -2232,-1777;-2266,-1728 -2328,-1677;-2215,-1655 -2090,-1504;-2215,-1655 -2194,-1672;-2090,-1504 -2065,-1472;-2090,-1504 -2119,-1482;-2065,-1472 -2053,-1457;-2065,-1472 -2085,-1455;-1636,-1275 -1596,-1303;-1636,-1275 -1682,-1353;-1636,-1275 -1622,-1254;-1596,-1303 -1566,-1326;-1596,-1303 -1555,-1238;-1566,-1326 -1556,-1335;-1566,-1326 -1522,-1279 -1529,-1257 -1555,-1238;-1556,-1335 -1355,-1499;-1556,-1335 -1597,-1403 -1682,-1353;-1355,-1499 -1115,-1696;-1355,-1499 -1395,-1564 -1416,-1585;-1737,-1897 -1386,-2181 -1376,-2194 -1371,-2209 -1370,-2224 -1375,-2240 -1396,-2277 -1400,-2296 -1381,-2452 -1349,-2526 -1342,-2548 -1338,-2605 -1340,-2632 -1353,-2681 -1397,-2759 -1455,-2899 -1467,-2959 -1487,-3000;-1737,-1897 -1769,-1867 -1782,-1840 -1787,-1776;-1737,-1897 -1759,-1937 -1773,-1982 -1774,-2171 -1778,-2196 -1784,-2204;1684,2652 1682,2500;1682,2500 1653,2497 1446,2499;1682,2500 1722,2509 1844,2547 1877,2554 1910,2557;-1292,-701 -1264,-720 -1123,-832 -504,-1338;-1292,-701 -1307,-725;-1292,-701 -1242,-616;2346,2789 2348,2742 2345,2722;2346,2789 2296,2791;2346,2789 2494,2803;2346,2789 2343,2816 2300,2837 2313,2871;2345,2722 2294,2594;2345,2722 2480,2668;2294,2594 2330,2581;-1926,-1503 -2002,-1590;-1926,-1503 -1932,-1499;-1926,-1503 -1915,-1512;-2002,-1590 -2019,-1610;-2002,-1590 -1968,-1616;-2019,-1610 -2021,-1611;-2019,-1610 -2005,-1627;-2021,-1611 -2043,-1628;-2021,-1611 -2036,-1597;1910,2660 1910,2557;1910,2557 2017,2552;-2070,-1386 -1989,-1451;-1989,-1451 -1953,-1481;-1989,-1451 -1921,-1364;-1953,-1481 -1948,-1485;-1953,-1481 -1941,-1465 -1919,-1484;-1948,-1485 -1932,-1499;-1948,-1485 -1962,-1503;-1932,-1499 -1919,-1484;-1915,-1512 -1872,-1547;-1915,-1512 -1901,-1492 -1863,-1524 -1864,-1536 -1872,-1547;-1872,-1547 -1844,-1570;-1844,-1570 -1876,-1610;-1844,-1570 -1838,-1562;2181,1930 2239,1915 2307,1888 2320,1888;2181,1930 2127,1937 2055,1938;2181,1930 2174,1909;2055,1938 2013,1936 1950,1939;2055,1938 2058,1902;2055,1938 2061,1966 2084,2012;1950,1939 1905,1941 1874,1955;1950,1939 1949,1910;1874,1955 1835,1984 1817,1985 1803,1984 1784,1977 1763,1950;1874,1955 1904,1985;1763,1950 1742,1923 1728,1914 1624,1879;1763,1950 1710,1980 1704,1999 1778,2022 1819,2030 1849,2026 1904,1985;1624,1879 1600,1869 1586,1855 1567,1815;1624,1879 1640,1848 1742,1849 1781,1804 1783,1782 1780,1762 1772,1755 1670,1748 1646,1719 1634,1718 1595,1741;1567,1815 1563,1802 1560,1759;1567,1815 1597,1804 1606,1793 1610,1778 1606,1762 1595,1741;1560,1759 1559,1754;1560,1759 1535,1759;1559,1754 1555,1727 1540,1702 1511,1670 1492,1658;1559,1754 1595,1741;1492,1658 1416,1613 1378,1605 1358,1606 1334,1613;1492,1658 1463,1709 1466,1719 1471,1725 1523,1757 1535,1759;1334,1613 1279,1634 1239,1637 1172,1596 1087,1536;1334,1613 1360,1668 1362,1717 1365,1728 1373,1735 1392,1736 1402,1740 1507,1805 1516,1806 1529,1799 1535,1759;1087,1536 1044,1505;1087,1536 1120,1514;1044,1505 942,1432;1044,1505 1070,1467 947,1377 918,1415;942,1432 918,1415;942,1432 930,1451 923,1454 917,1454 894,1439 880,1427 875,1417 888,1394;918,1415 888,1394;888,1394 813,1342 785,1327 729,1305;729,1305 705,1298;729,1305 793,1253;705,1298 657,1288 577,1285;705,1298 734,1260 741,1238 740,1224 700,1134;577,1285 391,1288;577,1285 575,1233;391,1288 220,1290;391,1288 386,1265 379,1253;220,1290 70,1292;220,1290 227,1248;70,1292 22,1294;70,1292 64,1258 47,1207;22,1294 -18,1302 -80,1338;22,1294 11,1241 5,1222;-80,1338 -96,1346;-80,1338 -86,1356;-338,1725 -258,1663 -224,1630;-338,1725 -354,1702;-338,1725 -268,1815;-224,1630 -234,1628 -245,1616;-224,1630 -211,1628;-2428,-2233 -2374,-2177;-2374,-2177 -2310,-2179 -2294,-2184 -2282,-2196 -2278,-2213 -2280,-2387;-2374,-2177 -2400,-2148 -2533,-2027;486,472 475,474 467,483;486,472 500,481 502,493 500,498;486,472 486,400 527,398;500,498 496,503 485,508;500,498 528,506;485,508 479,507 469,500 466,495 467,483;485,508 486,606;467,483 447,475 431,473 361,473;-824,495 -747,490;-824,495 -830,476;-824,495 -821,502;-747,490 -670,488;-747,490 -745,582 -740,598;-670,488 -565,485;-670,488 -670,445;-565,485 -525,485;-565,485 -568,412;-525,485 -397,483;-525,485 -525,534;-397,483 -288,482;-397,483 -395,508;-2611,-2110 -2599,-2097;-2599,-2097 -2576,-2072;-2599,-2097 -2622,-2073 -2599,-2050 -2576,-2072;-2576,-2072 -2575,-2072;-2575,-2072 -2533,-2027;-2575,-2072 -2548,-2097;-2533,-2027 -2472,-1962;-2533,-2027 -2610,-1956;-2472,-1962 -2463,-1952;-2472,-1962 -2508,-1928;-2463,-1952 -2433,-1920;-2463,-1952 -2402,-2010;-2433,-1920 -2409,-1893;-2433,-1920 -2413,-1938 -2407,-1947 -2408,-1955 -2415,-1962;-2409,-1893 -2387,-1870;-2409,-1893 -2439,-1867;-2387,-1870 -2367,-1850;-2387,-1870 -2406,-1850 -2387,-1831 -2367,-1850;1024,2639 1045,2565 1052,2553 1064,2545;1024,2639 884,2598 772,2554 726,2532;1024,2639 1119,2660 1202,2673 1224,2681;-956,-693 -975,-682 -1052,-619;-956,-693 -966,-670 -1042,-606;-956,-693 -820,-397 -796,-371 -766,-359 17,-358 49,-361 312,-406;-956,-693 -914,-733 -769,-850;-1052,-619 -1153,-537 -1185,-519;-1052,-619 -1042,-606;-1185,-519 -1194,-535;-1185,-519 -1176,-502;-1176,-502 -1146,-523 -1042,-606;-1176,-502 -1166,-480;-1042,-606 -1031,-592;1449,2879 1448,2803;1449,2879 1446,2879;1449,2879 1510,2878;1448,2803 1446,2687;1448,2803 1423,2804;1446,2687 1446,2499;1446,2687 1224,2681;1446,2499 1333,2495 1298,2487 1271,2473;-874,55 -902,48 -972,52;-874,55 -876,19 -942,19;-874,55 -811,56;-874,55 -899,59 -968,63;-972,52 -1006,-50;-972,52 -968,63;726,2532 763,2462 782,2439 797,2430 814,2426 887,2418 920,2412 1002,2378 1170,2328 1199,2329 1214,2339 1223,2355 1262,2460 1271,2473;726,2532 681,2511 551,2432;1271,2473 1258,2548 1236,2613 1228,2648 1224,2681;316,2168 314,2154 318,2124 325,2105;316,2168 288,2171 244,2183 215,2197 179,2219;316,2168 320,2182 329,2195;325,2105 339,2090 349,2086 431,2089 436,2086 445,2069;325,2105 301,2103 202,2105 151,2041;551,2432 580,2387 580,2377 574,2369 563,2368 554,2373 527,2416;551,2432 527,2416;527,2416 437,2355 392,2312 371,2281 343,2214 329,2195;-592,-992 -578,-966 -405,-582;-592,-992 -769,-850;-592,-992 -417,-1135;-1415,-906 -1386,-924;-1415,-906 -1377,-843;-1415,-906 -1425,-923;-1386,-924 -976,-1260 -716,-1469;-1386,-924 -1325,-818 -1352,-801;-1526,-1093 -1483,-1123;-1526,-1093 -1622,-1254;-1526,-1093 -1511,-1067;-1483,-1123 -944,-1562 -928,-1558 -830,-1581;-1483,-1123 -1555,-1238;179,2219 95,2280;179,2219 167,2199;95,2280 51,2228;95,2280 114,2303;329,2195 268,2205 224,2223 198,2238 114,2303;1224,2681 1210,2815;114,2303 193,2385 258,2445;-1921,-1364 -1919,-1362;-1921,-1364 -1931,-1356 -1940,-1342 -1947,-1316;-1919,-1362 -1881,-1314;-1919,-1362 -1893,-1363 -1887,-1361 -1873,-1347 -1867,-1338 -1867,-1332 -1881,-1314;-1881,-1314 -1873,-1303;-1787,-1776 -1967,-1774 -1993,-1766;-1787,-1776 -1767,-1776 -1752,-1773;-1731,-1425 -1684,-1457;-1731,-1425 -1737,-1432;-1731,-1425 -1704,-1386;-1684,-1457 -1216,-1836;-1684,-1457 -1655,-1417 -1704,-1386;-2232,-1777 -2266,-1786 -2299,-1801;-2232,-1777 -2160,-1770;1203,2867 1209,2819;1203,2867 1194,2866;1203,2867 1218,2869;1209,2819 1210,2815;1209,2819 1179,2815;1210,2815 1245,2819;-848,1224 -804,1217 -779,1219 -730,1240 -678,1256 -649,1259;-848,1224 -853,1203;-848,1224 -844,1241;-649,1259 -606,1253 -573,1243;-649,1259 -647,1279;-573,1243 -669,955;-573,1243 -567,1261;-769,-850 -646,-581;-2017,-1736 -2001,-1762 -1993,-1766;-2017,-1736 -2029,-1708 -2044,-1715 -2033,-1743;-2017,-1736 -2033,-1743;-2017,-1736 -1978,-1712 -1928,-1668;-1993,-1766 -1995,-1943;-1752,-1773 -1738,-1766 -1712,-1739 -1678,-1692;-1752,-1773 -1762,-1752 -1777,-1750;-1678,-1692 -1742,-1640;-1678,-1692 -1334,-1969;62,-613 -226,-1252 -237,-1264 -253,-1268 -417,-1135;-1704,-1260 -1769,-1203;-1704,-1260 -1673,-1219 -1622,-1254;-1704,-1260 -1725,-1287;-1769,-1203 -1784,-1190;-1769,-1203 -1745,-1174 -1804,-1128;-1784,-1190 -1810,-1167;-1784,-1190 -1806,-1219;-1725,-1287 -1806,-1219;-1725,-1287 -1761,-1333 -1893,-1225;-1806,-1219 -1849,-1183;-1006,95 -959,256;-1006,95 -960,88;-1006,95 -1162,95;-959,256 -909,240;-959,256 -1001,269 -1017,284 -1016,330 -1118,331;-960,88 -968,63;-960,88 -909,240;-909,240 -866,367;-909,240 -852,224;-1473,-1004 -1420,-1032;-1473,-1004 -1511,-1067;-1473,-1004 -1444,-955;-1420,-1032 -1437,-1059;-1420,-1032 -1389,-1048;-1704,-1386 -1682,-1353;-1643,-1023 -1593,-935;-1643,-1023 -1569,-1083 -1542,-1047;-1643,-1023 -1685,-986 -1639,-904 -1593,-935;-1593,-935 -1514,-999 -1542,-1047;-1511,-1067 -1542,-1047;2948,2868 2612,2820;-1377,-843 -1352,-801;-1377,-843 -1484,-755;-1352,-801 -1345,-789;-1345,-789 -1307,-725;-1345,-789 -1368,-773;-1307,-725 -1326,-712 -1332,-703;-1242,-616 -1212,-566;-1242,-616 -1272,-597;-1212,-566 -1194,-535;-1212,-566 -1245,-542;-1194,-535 -1224,-509;-1166,-480 -1138,-425 -1103,-336;-1166,-480 -1207,-454;-1103,-336 -1099,-324;-1103,-336 -1057,-354;-1099,-324 -1070,-241;-1099,-324 -1145,-313 -1207,-454;-1070,-241 -1068,-233;-1070,-241 -1032,-253 -1012,-251 -1003,-236 -998,-214;-1068,-233 -1020,-91;-1068,-233 -1131,-232;-1020,-91 -1011,-65;-1020,-91 -986,-100 -948,-102;-1011,-65 -1006,-50;-1011,-65 -1069,-52;-1006,-50 -970,-59 -924,-48 -850,-49 -851,-97;-866,367 -862,379;-866,367 -794,366;-862,379 -842,440;-862,379 -1025,381 -1025,442 -842,440;-842,440 -830,476;-830,476 -900,489 -957,494;-821,502 -808,543;-821,502 -957,540;-808,543 -748,720;-808,543 -848,557 -843,571;-748,720 -686,904;-748,720 -841,741;-748,720 -705,705;-686,904 -669,955;-686,904 -789,933;-669,955 -609,935;-567,1261 -557,1290;-567,1261 -617,1275 -647,1279;-557,1290 -552,1304;-557,1290 -496,1272;-552,1304 -508,1425;-552,1304 -525,1297 -488,1296;-508,1425 -479,1490;-508,1425 -622,1464 -635,1464;-479,1490 -427,1590;-479,1490 -517,1506 -541,1506;-427,1590 -384,1660 -354,1702;-427,1590 -486,1635;-354,1702 -321,1682 -278,1651 -258,1634 -245,1616;-354,1702 -401,1736;-268,1815 -141,1980;-268,1815 -296,1838 -299,1846;-141,1980 -60,2085;-141,1980 -185,2015;-60,2085 -43,2106;-60,2085 -40,2070 -20,2061 -10,2061 18,2074;-43,2106 24,2193;-43,2106 -71,2128;24,2193 51,2228;24,2193 45,2176;51,2228 36,2240;258,2445 292,2474;258,2445 282,2420;292,2474 308,2487;292,2474 322,2439;308,2487 310,2489;308,2487 282,2535 263,2541 249,2555;310,2489 329,2503;310,2489 326,2470 339,2474 342,2484 329,2503;329,2503 339,2511;339,2511 346,2516;339,2511 310,2554 305,2588 291,2609;346,2516 364,2530;346,2516 364,2494 371,2492 378,2495 382,2504 381,2510 364,2530;364,2530 385,2546;385,2546 385,2546;385,2546 405,2561;385,2546 408,2512;405,2561 430,2578;405,2561 422,2535;430,2578 476,2607;430,2578 450,2544;476,2607 515,2632;476,2607 451,2645;515,2632 541,2647;515,2632 532,2600;541,2647 577,2667;541,2647 516,2685;577,2667 596,2677;577,2667 594,2635;596,2677 621,2690;596,2677 609,2650 632,2661 628,2679 621,2690;621,2690 646,2702;646,2702 658,2708;646,2702 659,2673;658,2708 700,2728;658,2708 646,2741;700,2728 719,2736;700,2728 672,2787 643,2772 618,2826 653,2843;719,2736 722,2738;719,2736 704,2771 709,2783 704,2794;722,2738 749,2749;722,2738 733,2716 742,2716 751,2719 755,2726 749,2749;749,2749 769,2757;769,2757 772,2758;769,2757 756,2792;772,2758 799,2768;772,2758 786,2724;799,2768 822,2777;799,2768 786,2807 808,2814 822,2777;822,2777 837,2782;837,2782 844,2785;837,2782 851,2732;844,2785 870,2794;844,2785 832,2817;870,2794 898,2803;870,2794 879,2759;898,2803 997,2830;898,2803 888,2834;997,2830 1014,2834;997,2830 989,2862;1014,2834 1036,2839;1014,2834 1005,2874;1036,2839 1061,2844;1036,2839 1029,2879;1061,2844 1081,2848;1061,2844 1054,2880 1074,2884 1081,2848;1081,2848 1105,2852;1105,2852 1127,2856;1105,2852 1101,2884 1122,2887 1127,2856;1127,2856 1194,2866;1194,2866 1192,2901 1212,2903 1216,2892 1218,2869;1218,2869 1250,2872;1250,2872 1282,2875;1250,2872 1247,2902;1282,2875 1304,2877;1282,2875 1281,2906 1302,2907 1304,2877;1304,2877 1373,2879;1373,2879 1394,2879;1373,2879 1373,2908 1394,2908 1394,2879;1394,2879 1419,2880;1419,2880 1446,2879;1419,2880 1420,2911 1423,2916 1433,2919 1440,2918 1447,2912 1446,2879;1510,2878 1536,2878;1510,2878 1511,2922 1536,2922 1536,2878;1510,2878 1517,2856 1528,2849 1546,2846 1562,2850 1566,2853 1570,2877;1536,2878 1559,2878;1559,2878 1570,2877;1559,2878 1560,2919;1570,2877 1611,2877;1611,2877 1635,2877;1611,2877 1611,2911 1636,2910 1635,2877;1635,2877 1687,2876;1687,2876 1711,2876;1687,2876 1689,2843 1707,2843 1711,2876;1711,2876 1739,2875;1739,2875 1766,2875;1739,2875 1739,2847 1755,2843 1764,2848 1766,2875;1766,2875 1796,2874;1796,2874 1812,2874;1796,2874 1795,2845;1812,2874 1857,2873;1812,2874 1815,2919 1836,2920;1857,2873 1874,2873;1857,2873 1857,2831;1874,2873 1886,2872;1874,2873 1879,2841 1890,2835 1902,2838 1906,2842 1911,2870;1886,2872 1911,2870;1886,2872 1888,2947;1911,2870 1932,2868;1932,2868 1945,2866;1932,2868 1930,2838 1937,2831 1951,2833 1957,2840 1962,2863;1945,2866 1962,2863;1945,2866 1951,2945;1962,2863 1981,2859;1981,2859 2009,2852;1981,2859 1979,2835 1983,2830 1991,2828 1999,2830 2005,2838 2009,2852;2009,2852 2078,2835;2078,2835 2152,2816;2078,2835 2062,2792;2152,2816 2175,2811;2152,2816 2160,2858;2175,2811 2232,2799;2175,2811 2171,2787 2157,2749;2232,2799 2296,2791;2232,2799 2228,2771 2200,2732;2296,2791 2297,2729 2291,2714 2283,2705;2494,2803 2612,2820;2494,2803 2499,2766;2494,2803 2488,2838;2612,2820 2616,2840;-96,1346 -107,1352 -129,1377 -168,1437 -186,1479 -210,1560 -221,1582;-96,1346 -123,1323 -137,1318 -413,1320 -433,1323;-96,1346 -86,1356;-221,1582 -211,1585 -201,1595;-221,1582 -235,1585 -242,1590;-1838,-1562 -1791,-1600;-1838,-1562 -1799,-1513;-1791,-1600 -1745,-1637;-1791,-1600 -1839,-1654;-1745,-1637 -1742,-1640;-1745,-1637 -1723,-1609;-1742,-1640 -1787,-1691 -1807,-1691 -1845,-1661 -1839,-1654;-417,-1135 -401,-1105 -165,-580;575,1233 571,1219;575,1233 608,1228;571,1219 541,1112;571,1219 540,1227;541,1112 535,1094;541,1112 510,1120;535,1094 499,985;535,1094 568,1083;499,985 483,939;499,985 470,995;483,939 466,890 458,859;483,939 517,929;458,859 459,852 452,839 439,834;458,859 456,866 446,874 432,874 425,871 418,860 417,852 423,840 432,835;568,1083 574,1104;568,1083 559,1052;432,835 369,793 348,801 333,763;432,835 439,834;1120,1514 1148,1477;1120,1514 1243,1601 1254,1604 1280,1571;-245,1616 -248,1606 -242,1590;608,1228 601,1194;608,1228 612,1251;517,929 528,960;517,929 505,890;470,995 510,1120;470,995 438,905 432,898 412,898 392,906;470,995 439,1004 446,1025;540,1227 510,1120;540,1227 514,1234;510,1120 484,1127;-201,1595 -186,1565 -168,1502 -150,1457;-201,1595 -200,1613 -211,1628;-150,1457 -128,1419 -88,1363 -86,1356;-150,1457 -68,1492;-86,1356 2,1421;439,834 452,809 471,796 458,753;-473,1394 -474,1375 -465,1352 -456,1339 -433,1323;-473,1394 -452,1447 -383,1577 -370,1592 -358,1599 -323,1607 -298,1601 -267,1587 -242,1590;-473,1394 -482,1377 -484,1366 -479,1344 -462,1327 -452,1323 -433,1323;484,1127 487,1137;484,1127 480,1115;47,1207 33,1166;47,1207 5,1222;33,1166 19,1127;33,1166 -9,1182;19,1127 -21,1009;19,1127 -23,1141;-21,1009 -35,968;-21,1009 -65,1024;-35,968 -63,887;-35,968 -79,983;-63,887 -85,829 -97,820 -111,817 -123,822 -128,831 -124,853 -107,902;-63,887 -107,902;-107,902 -79,983;-79,983 -65,1024;-65,1024 -23,1141;-23,1141 -9,1182;-9,1182 5,1222;227,1248 227,1237 215,1191 187,1123 175,1106 166,1080 161,1058 161,1033 130,953 114,933 71,806;227,1248 277,1250;71,806 67,795 67,776 73,760 88,753 210,755 224,763 231,774 236,817 256,889 288,930 304,969 311,1039 325,1090 334,1109 361,1146 379,1214 379,1253;71,806 139,805;379,1253 326,1252;700,1134 686,1101;700,1134 743,1120 791,1091 807,1060 804,1033 793,1013 768,986 736,978 711,979 698,987 676,1015 654,1031;686,1101 670,1066;686,1101 741,1075;670,1066 654,1031;670,1066 709,1049;654,1031 639,993;639,993 623,950;639,993 697,960;623,950 611,912;623,950 695,910;611,912 599,878;611,912 677,878;599,878 599,878;-106,1746 -197,1648 -211,1628;-106,1746 -106,1746;2480,2668 2502,2659;2480,2668 2483,2640 2481,2630;2502,2659 2532,2665 2545,2663 2554,2657 2558,2649 2557,2632 2550,2623 2540,2620 2525,2621 2516,2627;2502,2659 2516,2627;2516,2627 2481,2630;2320,1888 2420,1886 2416,1717 2313,1722;2320,1888 2320,1840 2326,1817 2325,1789 2317,1769 2313,1722;2313,1722 2245,1725;2245,1725 2119,1825 2119,1841 2174,1909;2245,1725 2293,1786 2299,1796 2299,1807 2295,1814 2226,1861 2221,1869 2174,1909;2058,1902 2013,1878 2001,1878 1963,1898 1949,1910;2058,1902 2070,1893 2091,1855 2091,1847 2085,1839 2032,1810 2031,1753 1980,1753 1979,1815 1911,1850 1949,1910;2084,2012 2099,2065 2091,2076 2075,2112;2084,2012 2065,2019 2049,2017 1955,1981 1921,1975 1904,1985;2499,2766 2451,2758 2440,2751 2436,2746 2440,2729 2448,2723 2460,2721 2565,2735;2499,2766 2647,2789 2675,2775;2313,2871 2430,2829 2488,2838;2313,2871 2330,2913;2488,2838 2566,2850 2561,2862 2541,2870;2488,2838 2477,2854 2423,2874 2436,2911;2409,2921 2436,2911;2436,2911 2459,2903;2481,2630 2468,2605 2446,2606 2408,2622 2402,2645 2405,2654;2481,2630 2469,2629 2405,2654;2405,2654 2367,2672 2330,2581;2330,2581 2459,2526 2565,2490;2160,2858 2160,2858;2160,2858 2239,2840;793,1253 835,1235;793,1253 762,1155 796,1140 835,1235;793,1253 817,1292 859,1278 835,1235;-1809,-1374 -1737,-1432;-1737,-1432 -1783,-1492;-1943,-1556 -1876,-1610;-1876,-1610 -1883,-1619;-1777,-1750 -1830,-1749 -1928,-1668;-1777,-1750 -1776,-1733 -1895,-1634;-1928,-1668 -1895,-1634;-1895,-1634 -1883,-1619;-1839,-1654 -1883,-1619;-1883,-1619 -1929,-1581;-1699,-1579 -1723,-1609;-1723,-1609 -1775,-1569 -1757,-1546 -1799,-1513;-1799,-1513 -1783,-1492;-1783,-1492 -1761,-1507 -1718,-1519 -1686,-1475;-1426,-1111 -1457,-1091 -1437,-1059;-1437,-1059 -1407,-1079;-1479,-907 -1642,-773;-1479,-907 -1463,-906 -1441,-913 -1425,-923;-1479,-907 -1477,-919 -1470,-932 -1444,-955;-1425,-923 -1444,-955;-1574,-681 -1484,-755;-1484,-755 -1542,-766 -1603,-719;-1368,-773 -1368,-773;-1416,-583 -1438,-610 -1438,-620 -1332,-703;-1416,-583 -1390,-551;-1416,-583 -1326,-656;-1390,-551 -1366,-522 -1363,-520 -1356,-521 -1277,-589 -1272,-597;-1390,-551 -1304,-621;-1272,-597 -1319,-662 -1332,-703;-1245,-542 -1321,-488;-1245,-542 -1224,-509;-1321,-488 -1318,-479 -1297,-454 -1287,-449;-1321,-488 -1334,-480 -1416,-416;-1378,-370 -1291,-441 -1287,-449;-1287,-449 -1279,-462 -1224,-509;-1303,-382 -1207,-454;-1147,47 -1075,45;-1075,45 -1037,44 -1069,-52;-1075,45 -1100,-28;-1155,-195 -1200,-194;-1155,-195 -1167,-231;-1155,-195 -1146,-168;-1200,-194 -1252,-194;-1200,-194 -1199,-167 -1146,-168;-1252,-194 -1279,-196 -1286,-203 -1288,-209 -1281,-218 -1253,-220;-1252,-194 -1253,-220;-1253,-220 -1239,-230 -1225,-230;-1225,-230 -1167,-231;-1225,-230 -1225,-259 -1140,-260 -1131,-232;-1167,-231 -1131,-232;-1131,-232 -1069,-52;-1146,-168 -1109,-56;-1109,-56 -1100,-28;-1109,-56 -1180,-55 -1189,-48 -1189,-34 -1180,-28 -1100,-28;-1109,-56 -1069,-52;-843,571 -815,650;-843,571 -883,585;-1038,710 -1067,601 -1005,584;-1005,584 -979,682 -961,688;-1005,584 -967,573;-967,573 -927,562 -897,672;-967,573 -939,682;-930,762 -931,774 -939,780 -949,781 -959,769;-930,762 -938,753 -947,752 -955,756 -959,769;-930,762 -841,741;-959,769 -1018,784;-950,685 -936,742;-841,741 -789,933;-878,958 -880,968 -887,975 -897,975 -905,969;-878,958 -886,948 -900,948 -907,960 -905,969;-878,958 -789,933;-905,969 -968,987;-806,707 -822,653;-964,1024 -901,1008;-901,1008 -729,964 -718,1004;-901,1008 -891,1048;-718,1004 -708,1042 -881,1088;-718,1004 -891,1048;-891,1048 -885,1075;-885,1075 -881,1088;-885,1075 -906,1115 -902,1141 -863,1164;-881,1088 -872,1126;-872,1126 -863,1164;-872,1126 -806,1109 -796,1148;-863,1164 -853,1203;-863,1164 -796,1148;-853,1203 -787,1186;-844,1241 -828,1304;-844,1241 -816,1234 -791,1234 -698,1274 -674,1279 -647,1279;-828,1304 -825,1317;-828,1304 -850,1339 -848,1351 -817,1350;-825,1317 -817,1350;-825,1317 -752,1298;-817,1350 -771,1347 -695,1328 -582,1325;-759,1185 -787,1186;-787,1186 -796,1148;-666,1368 -724,1375 -804,1395;-666,1368 -671,1353;-666,1368 -648,1422;-804,1395 -798,1424;-804,1395 -816,1413 -826,1434 -826,1442 -816,1454 -791,1463;-648,1422 -635,1464;-648,1422 -798,1424;-635,1464 -776,1466 -791,1463;-798,1424 -791,1463;-907,1511 -842,1511;-842,1511 -732,1509;-842,1511 -748,1563 -732,1509;-732,1509 -541,1506;-541,1506 -541,1538;-505,1604 -530,1622;-505,1604 -486,1635;-505,1604 -541,1538;-530,1622 -610,1678 -586,1711 -486,1635;-530,1622 -553,1583 -568,1548 -566,1545 -541,1538;-506,1706 -454,1666 -434,1693;-399,1871 -335,1825 -358,1794;-437,1856 -400,1827;-400,1827 -358,1794;-400,1827 -416,1800 -427,1789 -491,1739;-358,1794 -401,1736;-510,1755 -491,1739;-491,1739 -434,1693;-434,1693 -401,1736;-365,1896 -299,1846;-299,1846 -230,1924;-185,2015 -206,1987 -231,2007;-185,2015 -165,2042 -189,2061;-191,2132 -111,2078 -88,2107;-88,2107 -71,2128;-88,2107 -134,2148 -102,2184 -57,2145;-71,2128 -57,2145;-57,2145 -33,2176 -100,2238;-82,2265 -41,2235 -21,2262;2,2293 37,2267 36,2240;2,2293 -21,2262;2,2293 22,2320;36,2240 11,2236 -21,2262;249,2555 249,2555;368,2695 417,2624 450,2644;498,2785 549,2706 516,2685;450,2644 451,2645;450,2644 430,2677 495,2718 516,2685;451,2645 516,2685;646,2741 622,2795 586,2777;646,2741 619,2729;1561,2935 1560,2919;1560,2919 1588,2919;2319,2936 2277,2832 2239,2840;2239,2840 2270,2914;-2367,-1850 -2338,-1825 -2299,-1801;-2355,-1745 -2338,-1759;-2338,-1759 -2321,-1773;-2338,-1759 -2349,-1776 -2337,-1785 -2321,-1773;-2321,-1773 -2312,-1780 -2299,-1801;-2167,-1742 -2160,-1742;-2160,-1742 -2137,-1744 -2134,-1708;-2160,-1742 -2160,-1770;-2160,-1770 -2103,-1765;-2093,-1745 -2102,-1703 -2107,-1696 -2110,-1658 -2106,-1652 -2078,-1645 -2048,-1630;-2048,-1630 -2043,-1628;-2048,-1630 -2026,-1671;-2043,-1628 -2058,-1617;-2072,-1724 -2062,-1754;-2062,-1754 -2103,-1765;-2062,-1754 -2033,-1743;-1900,-1458 -1919,-1484;1783,2830 1786,2843 1795,2845;1795,2845 1806,2841 1808,2830;45,2176 38,2155 -7,2094 18,2074;45,2176 64,2186 95,2227 109,2234 127,2229 167,2199;167,2199 200,2174 202,2161 105,2032 94,2026 76,2030 18,2074;-488,1296 -496,1272;-488,1296 -385,1294;-525,1182 -496,1272;-385,1294 -345,1293;-385,1294 -385,1244;-345,1293 -296,1292 -281,1280;-345,1293 -346,1202;-281,1280 -231,1238;-281,1280 -134,1279;-231,1238 -219,1226;-231,1238 -135,1238;-219,1226 -224,1219 -222,1212 -217,1207 -209,1207;-219,1226 -210,1229 -202,1222 -203,1211 -209,1207;-209,1207 -178,1107;-475,569 -524,569;-524,569 -525,534;-524,569 -524,614;-525,534 -475,534;-524,614 -523,908 -539,913;-524,614 -420,613;-539,913 -609,935;-539,913 -511,959;-609,935 -609,899;-609,899 -611,795;-609,899 -630,900 -639,894 -646,884 -705,705;-611,795 -612,680;-611,795 -630,791 -637,786 -642,779 -671,693;-612,680 -614,594 -663,596;-612,680 -636,681;-663,596 -703,597;-663,596 -636,681;-703,597 -740,598;-703,597 -671,693;-740,598 -705,705;-705,705 -671,693;-671,693 -636,681;-511,959 -509,962;-511,959 -590,985;-509,962 -501,976;-509,962 -417,951;-501,976 -491,993 -275,981 -285,956;-501,976 -523,1013 -575,1032 -545,1129 -455,1127;-285,956 -301,914 -398,949 -417,951;-285,956 -260,947 -245,990;-417,951 -424,860 -430,679;-670,445 -786,445 -794,429 -794,366;-670,445 -670,379 -677,366 -794,366;-820,84 -819,108 -784,201;-820,84 -898,85 -852,224;-820,84 -691,83 -688,193 -723,193;-784,201 -773,231;-784,201 -761,194 -746,193;-784,201 -852,224;-773,231 -756,277 -747,323;-773,231 -747,209 -746,193;-747,323 -694,322;-747,323 -819,323 -852,224;-544,286 -553,322 -659,322;-659,322 -694,322;-659,322 -653,272 -665,267;-694,322 -694,301 -670,283;-723,193 -746,193;-723,193 -721,213 -677,262 -665,267;-665,267 -654,254 -648,251 -560,271;-998,-214 -996,-158;-998,-214 -862,-217;-810,-128 -862,-127 -862,-217;-810,-128 -813,-217 -862,-217;-810,-128 -808,-20 -760,-20;-761,-98 -761,-45;-761,-45 -760,-20;-761,-45 -577,-44;-760,-20 -753,-11 -753,5;-753,5 -753,57;-753,5 -539,3 -538,54;-753,57 -811,56;-753,57 -538,54;-538,54 -492,54;-812,8 -811,56;-492,54 -264,51;-492,54 -490,6 -483,2 -406,-5 -390,-12 -348,-15 -314,-2 -266,1 -264,51;-264,51 -236,48 -221,40 -201,23 -171,9 -105,8 -58,-14 -46,-25;-938,-311 -1034,-306 -1045,-314 -1057,-354;-1057,-354 -1109,-474;-1057,-354 -1008,-370;-1109,-474 -1121,-500;-1109,-474 -1044,-502;-930,-339 -932,-364 -941,-370 -972,-365 -1008,-370;-1008,-370 -1021,-410 -1022,-442 -1044,-502;-1044,-502 -1008,-517 -1005,-521 -1017,-571 -1031,-592;-1031,-592 -1110,-528;-2103,-1765 -2098,-1922;-2098,-1922 -2210,-1912;-2098,-1922 -2087,-1923 -2088,-1931;-1892,-1980 -1995,-1981 -1995,-1970;-1995,-1970 -1995,-1943;-1995,-1970 -2092,-1964;-1995,-1943 -2088,-1931;-2092,-1964 -2091,-1958;-2092,-1964 -2095,-1990;-2232,-2006 -2211,-1976;-2232,-2006 -2271,-2016 -2294,-2029 -2310,-2004;-2232,-2006 -2212,-2008;-2211,-1976 -2194,-1948;-2211,-1976 -2095,-1990;-2194,-1948 -2210,-1912;-2194,-1948 -2091,-1958;-2210,-1912 -2248,-1895 -2270,-1898 -2284,-1903 -2297,-1913 -2328,-1951;-2088,-1931 -2091,-1958;-2095,-1990 -2100,-2035;-2100,-2035 -2111,-2024 -2141,-2016 -2212,-2008;-2100,-2035 -2091,-2044 -2079,-2066 -2062,-2082 -2050,-2087 -2038,-2087 -2045,-2167;-2212,-2008 -2214,-2062;-1588,-2174 -1621,-2258 -1631,-2268 -1638,-2270 -1651,-2267 -1690,-2245 -1784,-2204;-1784,-2204 -1801,-2215 -1856,-2234;-1856,-2234 -1850,-2287 -1847,-2376 -1849,-2389 -1853,-2393 -1865,-2397 -1970,-2388 -1997,-2363;-1856,-2234 -1882,-2243 -1895,-2252 -1931,-2287 -1997,-2363;-1997,-2363 -2063,-2428 -2100,-2488 -2051,-2512 -2043,-2519 -2036,-2532;277,1250 326,1252;277,1250 278,1207 274,1180 247,1100 227,1072 216,1015 195,947 164,889 139,805;326,1252 328,1226 310,1166 283,1126 263,1072 255,1027 253,995 238,954 198,867 179,805 139,805;528,506 571,519;528,506 530,596 572,594 571,519;528,506 527,398;571,519 568,397 527,398;-87,479 -87,503;-87,479 -288,482;-87,479 83,477;-87,503 -61,514 84,512;-87,503 -156,570;84,512 83,477;84,512 104,514 166,578;83,477 283,474;-395,508 -384,512 -288,514;-395,508 -412,530 -411,580;-288,514 -188,516 -184,522 -180,608;-288,514 -298,506 -298,492 -288,486;-288,514 -279,507 -279,492 -288,486;-288,486 -288,482;283,474 361,473;283,474 285,506;361,473 361,505 354,505;285,506 354,505;285,506 240,509 224,521 221,550 202,567;354,505 369,564 425,560"};
+var JDS=[
+ {n:'No damage',v:'--jds0'},{n:'Minor damage',v:'--jds1'},{n:'Major damage',v:'--jds2'},{n:'Destroyed',v:'--jds3'},{n:'Un-classified',v:'--jdsx'}
+];
+var RD={1:{n:'Debris, partial lane',v:'--sand',f:1.3},2:{n:'Debris, full width',v:'--sand2',f:2.5},3:{n:'Obstruction, partial',v:'--jds2',f:1.8},4:{n:'Obstruction, total',v:'--bad',f:99},5:{n:'Flooding, partial',v:'--flood',f:2},6:{n:'Flooding, total',v:'--flood2',f:99},7:{n:'Road destroyed',v:'--jds3',f:99},8:{n:'Not determinable',v:'--jdsx',f:1.5}};
+function pad(n){return String(n).padStart(4,'0')}
+var B=RAW.blds.split(';').map(function(r,i){var a=r.split(',').map(Number);
+  var area=(a[2]/2)*(a[3]/2),rr=rng(i*7919+13);
+  var ht=area>1400?16+rr()*18:area>600?9+rr()*6:5+rr()*4;
+  return {id:'B-'+pad(i+1),x:a[0]/2,y:a[1]/2,w:a[2]/2,h:a[3]/2,ang:a[4],jds:a[5],ht:ht,area:area,scanned:true}});
+var DM=RAW.dmg.split(';').map(function(r){var a=r.split(',').map(Number);return {x:a[0]/2,y:a[1]/2,w:a[2]/2,h:a[3]/2,ang:a[4],c:a[5]}});
+var ROADS=RAW.roads.split(';').map(function(r){return r.split(' ').map(function(p){var a=p.split(',');return [a[0]/2,a[1]/2]})});
+
+/* road graph: polyline endpoints are nodes; edge cost from nearby CRASAR road-damage patches */
+var nodes=[],nodeAt={},edges=[];
+function nid(p){var k=p[0]+'_'+p[1];if(nodeAt[k]===undefined){nodeAt[k]=nodes.length;nodes.push({x:p[0],y:p[1],e:[]})}return nodeAt[k]}
+function dseg(px,py,a,b){var vx=b[0]-a[0],vy=b[1]-a[1],L=vx*vx+vy*vy||1,t=((px-a[0])*vx+(py-a[1])*vy)/L;t=t<0?0:t>1?1:t;return Math.hypot(px-a[0]-t*vx,py-a[1]-t*vy)}
+ROADS.forEach(function(pts){
+  var len=0,x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  for(var k=0;k<pts.length;k++){if(k)len+=Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]);x0=Math.min(x0,pts[k][0]);x1=Math.max(x1,pts[k][0]);y0=Math.min(y0,pts[k][1]);y1=Math.max(y1,pts[k][1])}
+  var f=1,worst=0,hits={};
+  DM.forEach(function(d){if(d.x<x0-6||d.x>x1+6||d.y<y0-6||d.y>y1+6)return;
+    for(var k=1;k<pts.length;k++){if(dseg(d.x,d.y,pts[k-1],pts[k])<5){hits[d.c]=(hits[d.c]||0)+1;if(RD[d.c].f>f){f=RD[d.c].f;worst=d.c}break}}});
+  var a=nid(pts[0]),b=nid(pts[pts.length-1]),e={a:a,b:b,pts:pts,len:len,f:f,worst:worst,blocked:f>=99};
+  edges.push(e);nodes[a].e.push(e);if(b!==a)nodes[b].e.push(e);
+});
+function nearestNode(x,y){var best=0,bd=1e18;nodes.forEach(function(n,i){var d=(n.x-x)*(n.x-x)+(n.y-y)*(n.y-y);if(n.e.length&&d<bd){bd=d;best=i}});return best}
+var staging={x:-1305.5,y:-1055};staging.node=nearestNode(staging.x,staging.y);
+var OPEN=(function(){var seen=new Uint8Array(nodes.length),st=[staging.node];seen[staging.node]=1;while(st.length){var u=st.pop();nodes[u].e.forEach(function(e){if(e.blocked)return;var v=e.a===u?e.b:e.a;if(!seen[v]){seen[v]=1;st.push(v)}})}return seen})();
+function access(x,y){var own=nearestNode(x,y),best=own,bd=1e18;if(!OPEN[own]){nodes.forEach(function(n,i){if(!OPEN[i])return;var d=(n.x-x)*(n.x-x)+(n.y-y)*(n.y-y);if(d<bd){bd=d;best=i}})}
+  var r=route(best);return r?{pts:r.pts,len:r.len,slow:r.slow,cut:!OPEN[own],gap:Math.round(Math.hypot(nodes[best].x-x,nodes[best].y-y))}:null}
+
+/* Illustrative applicant inventory placed on real footprints; damage label comes from the real building */
+var FAC=[
+ {id:'E-001',inv:3,name:'Community Center',bx:-230,by:355.5,cat:'E',flown:true,site:'cc'},
+ {id:'E-004',inv:7,name:'Elementary School',bx:1000.5,by:911,cat:'E',flown:true,site:'es'},
+ {id:'E-009',inv:5,name:'Fire Station 2',bx:-594,by:-11.5,cat:'E',flown:false},
+ {id:'F-002',inv:12,name:'Lift Station 4',bx:10.5,by:1174,cat:'F',flown:false},
+ {id:'E-011',inv:9,name:'Branch Library',bx:-301.5,by:824.5,cat:'E',flown:false}
+];
+FAC.forEach(function(f){var best=null,bd=1e18;B.forEach(function(b){var d=(b.x-f.bx)*(b.x-f.bx)+(b.y-f.by)*(b.y-f.by);if(d<bd){bd=d;best=b}});
+  best.fac=f.id;f.b=best;f.x=best.x;f.y=best.y;f.w=best.w;f.h=best.h;f.ang=best.ang;f.jds=best.jds;f.ht=Math.max(best.ht,10);f.bid=best.id});
+var BR=B.filter(function(b){return !b.fac});
+
+var SITES={
+ cc:{footprint:'80,70 520,82 508,330 68,318',ridge:[74,194,514,206],pitch:.32,
+   lat:'[LAT]',lon:'[LON]',flight:'sample detail flight · 1,184 frames',
+   defects:[
+    {id:'D-017',code:'E-R02',name:'Exposed decking',comp:'Roof R-02',qty:1280,unit:'SF',pm:90,mat:'Plywood sheathing',matc:.62,det:.91,assoc:.84,ce:'0.6 m',state:'ref',review:'pend',poly:'236,236 346,240 366,270 352,298 252,294 232,266',views:7,no:'Decking thickness, moisture under intact covering'},
+    {id:'D-018',code:'E-R01',name:'Missing roof covering',comp:'Roof R-02',qty:2450,unit:'SF',pm:140,mat:'Architectural asphalt shingle',matc:.88,det:.94,assoc:.9,ce:'0.6 m',state:'ref',review:'pend',poly:'200,216 400,222 420,300 404,318 214,312 190,276',views:9,no:'Underlayment condition'},
+    {id:'D-021',code:'E-F01',name:'Displaced drip edge',comp:'R-01 eave',qty:180,unit:'LF',pm:25,mat:'Aluminum',matc:.55,det:.78,assoc:.7,ce:'search area 3.1 m',state:'prov',review:'pend',line:[90,72,330,79],views:3,no:'Fastener condition'},
+    {id:'D-024',code:'E-R03',name:'Roof debris deposit',comp:'Roof R-01',qty:12,unit:'CY',pm:4,mat:'Vegetative',matc:.81,det:.86,assoc:.8,ce:'0.8 m',state:'ref',review:'pend',poly:'400,110 470,114 476,150 404,152',views:5,no:'Damage beneath deposit',pile:true},
+    {id:'D-026',code:'E-G01',name:'Broken glazing',comp:'North facade',qty:null,unit:'EA',pm:null,mat:'',matc:0,det:.72,assoc:0,ce:'unlocated',state:'unl',review:'pend',views:1,no:'Single oblique view; count and size need field check',float:[300,70]}
+   ]},
+ es:{footprint:'70,60 380,60 380,180 530,180 530,340 70,340',ridge:null,pitch:0,
+   lat:'[LAT]',lon:'[LON]',flight:'sample detail flight · 842 frames',
+   defects:[
+    {id:'D-102',code:'E-R01',name:'Missing roof covering',comp:'Roof R-03',qty:3100,unit:'SF',pm:210,mat:'Modified bitumen membrane',matc:.71,det:.9,assoc:.86,ce:'0.7 m',state:'ref',review:'pend',poly:'400,200 510,204 516,300 404,296',views:8,no:'Insulation and deck beneath membrane'},
+    {id:'D-105',code:'E-S01',name:'Displaced rooftop unit',comp:'RTU-2',qty:1,unit:'EA',pm:0,mat:'HVAC package unit',matc:.66,det:.83,assoc:.78,ce:'0.7 m',state:'prov',review:'pend',poly:'170,110 205,110 205,138 170,138',views:4,no:'Unit function, refrigerant lines',rtu:true},
+    {id:'D-108',code:'A-V01',name:'Vegetative debris',comp:'East lot',qty:38,unit:'CY',pm:6,mat:'Vegetative',matc:.9,det:.93,assoc:.88,ce:'0.5 m',state:'ver',review:'conf',poly:'548,60 596,70 596,150 552,140',views:6,no:'Mixed C&D content under canopy',ground:true,pile:true}
+   ]}
+};
+
+/* ================= state ================= */
+var S={view:'sweep',fac:'E-001',defect:'D-017',filter:'all',bldg:null};
+try{var sv=localStorage.getItem('sortie-view');if(sv)S.view=sv}catch(e){}
+var hsh=(location.hash||'').replace('#','');if(['sweep','site','scope'].indexOf(hsh)>=0)S.view=hsh;
+function fac(){return FAC.find(function(f){return f.id===S.fac})}
+function site(){var f=fac();return f&&f.site?SITES[f.site]:null}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fmt(n){return n==null?'—':n.toLocaleString('en-US')}
+var STATE={prov:['Provisional','p-prov'],ref:['Refined','p-ref'],ver:['Verified','p-ver'],unl:['Unlocated','p-unl']};
+var REV={pend:['Awaiting review','p-pend'],conf:['Confirmed','p-conf'],rej:['Rejected','p-rej'],fld:['Field check','p-fld']};
+function pill(m,k){return '<span class="pill '+m[k][1]+'">'+m[k][0]+'</span>'}
+function toast(t){var el=document.getElementById('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){el.hidden=true},2200)}
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* routing: Dijkstra, blocked edges excluded, slowed edges weighted */
+var routeCache={};
+function route(target){
+  if(routeCache[target]!==undefined)return routeCache[target];
+  var n=nodes.length,dist=new Float64Array(n).fill(Infinity),prev=new Int32Array(n).fill(-1),used=new Array(n),done=new Uint8Array(n);
+  dist[staging.node]=0;
+  for(var k=0;k<n;k++){
+    var u=-1,bd=Infinity;for(var i=0;i<n;i++)if(!done[i]&&dist[i]<bd){bd=dist[i];u=i}
+    if(u<0)break;done[u]=1;if(u===target)break;
+    nodes[u].e.forEach(function(e){if(e.blocked)return;var v=e.a===u?e.b:e.a,c=dist[u]+e.len*e.f;if(c<dist[v]){dist[v]=c;prev[v]=u;used[v]=e}});
+  }
+  if(dist[target]===Infinity){routeCache[target]=null;return null}
+  var pts=[],slow=0,len=0,v=target,seq=[];
+  while(prev[v]>=0){seq.unshift({e:used[v],to:v});v=prev[v]}
+  seq.forEach(function(s){var e=s.e,p=e.b===s.to?e.pts:e.pts.slice().reverse();len+=e.len;if(e.f>1)slow++;p.forEach(function(q,i){if(i||!pts.length)pts.push(q)})});
+  var res={pts:pts,slow:slow,len:len};routeCache[target]=res;return res;
+}
+
+/* ================= 3D engine ================= */
+var T=window.THREE, GL=null;
+function cssv(v){return (getComputedStyle(document.documentElement).getPropertyValue(v)||'').trim()||'#888888'}
+function C(v){return new T.Color(cssv(v))}
+function wx(x){return x-500} function wz(y){return y-320}
+
+function initGL(){
+  if(GL!==null)return GL;
+  if(!T||!T.OrbitControls){GL=false;return GL}
+  try{
+    var vp=document.createElement('div');vp.className='vp';
+    var r=new T.WebGLRenderer({antialias:true});
+    r.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+    r.shadowMap.enabled=true;r.shadowMap.type=T.PCFSoftShadowMap;
+    vp.appendChild(r.domElement);
+    var labels=document.createElement('div');labels.className='labels';vp.appendChild(labels);
+    var hud=document.createElement('div');vp.appendChild(hud);
+    GL={vp:vp,r:r,labels:labels,hud:hud,scenes:{},cur:null,clock:new T.Clock()};
+    new ResizeObserver(resize).observe(vp);
+    bindPick();
+    requestAnimationFrame(loop);
+  }catch(e){GL=false}
+  return GL;
+}
+function resize(){
+  if(!GL)return;var w=GL.vp.clientWidth,h=GL.vp.clientHeight;if(!w||!h)return;
+  GL.r.setSize(w,h);
+  Object.keys(GL.scenes).forEach(function(k){var s=GL.scenes[k];s.cam.aspect=w/h;s.cam.updateProjectionMatrix()});
+}
+function mount(kind){
+  var slot=document.getElementById('slot');if(!slot)return;
+  if(!initGL()){slot.innerHTML='<div class="nogl">3D view needs WebGL, which this browser has turned off.</div>';return}
+  slot.appendChild(GL.vp);
+  var key=kind==='site'?'site:'+fac().site:'city';
+  if(!GL.scenes[key])GL.scenes[key]=kind==='site'?buildSite(fac().site):buildCity();
+  Object.keys(GL.scenes).forEach(function(k){GL.scenes[k].ctl.enabled=(k===key)});
+  GL.cur=GL.scenes[key];
+  GL.labels.innerHTML='';GL.cur.labels.forEach(function(l){GL.labels.appendChild(l.el)});
+  GL.hud.innerHTML='';if(GL.cur.hud)GL.hud.appendChild(GL.cur.hud);
+  resize();
+  GL.cur.sync();
+}
+function rebuildAll(){ if(!GL)return; Object.keys(GL.scenes).forEach(function(k){GL.scenes[k].dispose&&GL.scenes[k].dispose()}); GL.scenes={}; if(S.view!=='scope')mount(S.view) }
+var mq=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');
+if(mq&&mq.addEventListener)mq.addEventListener('change',function(){setTimeout(rebuildAll,30)});
+new MutationObserver(function(){setTimeout(rebuildAll,30)}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+function mkLabel(text,cls){var el=document.createElement('div');el.className='lbl'+(cls?' '+cls:'');el.textContent=text;return el}
+function baseScene(camPos,target){
+  var sc=new T.Scene();sc.background=C('--sky');sc.fog=new T.Fog(C('--sky'),1700,3600);
+  var cam=new T.PerspectiveCamera(38,1.6,1,8000);cam.position.set(camPos[0],camPos[1],camPos[2]);
+  var ctl=new T.OrbitControls(cam,GL.r.domElement);ctl.target.set(target[0],target[1],target[2]);
+  ctl.enableDamping=true;ctl.dampingFactor=.08;ctl.maxPolarAngle=1.38;ctl.minDistance=120;ctl.maxDistance=1700;ctl.enabled=false;
+  sc.add(new T.HemisphereLight(0xffffff,C('--land'),.72));
+  var sun=new T.DirectionalLight(0xffffff,.85);sun.position.set(-380,620,260);sun.castShadow=true;
+  sun.shadow.mapSize.set(2048,2048);var sd=sun.shadow.camera;sd.left=-720;sd.right=720;sd.top=720;sd.bottom=-720;sd.near=50;sd.far=2400;sun.shadow.bias=-0.0006;
+  sc.add(sun);
+  return {sc:sc,cam:cam,ctl:ctl,labels:[],pick:[],fly:null,home:{p:camPos.slice(),t:target.slice()}};
+}
+function flyTo(s,tx,ty,tz){var d=new T.Vector3(tx,ty,tz).sub(s.ctl.target);s.fly={d:d,left:1}}
+function resetView(s){var p=new T.Vector3().fromArray(s.home.p),t=new T.Vector3().fromArray(s.home.t);s.fly={to:{p:p,t:t},left:1}}
+
+/* ---------- city (real Fort Myers Beach labels) ---------- */
+var SC=0.4;function X(x){return x*SC}function Z(y){return y*SC}
+function hull(P){P=P.slice().sort(function(a,b){return a[0]-b[0]||a[1]-b[1]});function cr(o,a,b){return (a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0])}
+  var lo=[],up=[];P.forEach(function(p){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p)});
+  for(var i=P.length-1;i>=0;i--){var p=P[i];while(up.length>=2&&cr(up[up.length-2],up[up.length-1],p)<=0)up.pop();up.push(p)}
+  up.pop();lo.pop();return lo.concat(up)}
+function quad(arr,cx,cy,w,h,angDeg,y){var a=angDeg*Math.PI/180,c=Math.cos(a),s=Math.sin(a),hw=w/2,hh=h/2;
+  var q=[[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]].map(function(p){return [X(cx+p[0]*c-p[1]*s),Z(cy+p[0]*s+p[1]*c)]});
+  [[0,2,1],[0,3,2]].forEach(function(t){t.forEach(function(i){arr.push(q[i][0],y,q[i][1])})})}
+function ribbon(arr,pts,wid,y){for(var k=1;k<pts.length;k++){var a=pts[k-1],b=pts[k],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy);if(L<.01)continue;
+  quad(arr,(a[0]+b[0])/2,(a[1]+b[1])/2,L+wid*.9,wid,Math.atan2(dy,dx)*180/Math.PI,y)}}
+function geo(arr,col){var g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(arr,3));if(col)g.setAttribute('color',new T.Float32BufferAttribute(col,3));g.computeVertexNormals();return g}
+
+function buildCity(){
+  var s=baseScene([-330,380,470],[0,0,0]), sc=s.sc;
+  s.ctl.maxDistance=2100;s.ctl.minDistance=60;
+  // water
+  var wg=new T.PlaneGeometry(4200,4200,90,90);wg.rotateX(-Math.PI/2);
+  var water=new T.Mesh(wg,new T.MeshStandardMaterial({color:C('--water'),roughness:.35,metalness:.15,flatShading:true}));water.position.y=-3;sc.add(water);
+  s.water=water;s.wbase=Float32Array.from(wg.attributes.position.array);
+  // land: expanded hull of mapped features
+  var pts=B.map(function(b){return [b.x,b.y]});ROADS.forEach(function(r){r.forEach(function(p){pts.push(p)})});
+  var h=hull(pts),cx=0,cy=0;h.forEach(function(p){cx+=p[0];cy+=p[1]});cx/=h.length;cy/=h.length;
+  var sh=new T.Shape();h.forEach(function(p,i){var dx=p[0]-cx,dy=p[1]-cy,L=Math.hypot(dx,dy)||1,x=p[0]+dx/L*70,y=p[1]+dy/L*70;i?sh.lineTo(X(x),-Z(y)):sh.moveTo(X(x),-Z(y))});
+  var lg=new T.ExtrudeGeometry(sh,{depth:5,bevelEnabled:true,bevelSize:6,bevelThickness:2,bevelSegments:2});lg.rotateX(-Math.PI/2);lg.translate(0,-5,0);
+  var land=new T.Mesh(lg,new T.MeshStandardMaterial({color:C('--land'),roughness:1}));land.receiveShadow=true;sc.add(land);
+  // roads
+  var ra=[];ROADS.forEach(function(r){ribbon(ra,r,7,.3)});
+  var roads=new T.Mesh(geo(ra),new T.MeshStandardMaterial({color:C('--road'),roughness:.9,side:T.DoubleSide}));roads.receiveShadow=true;sc.add(roads);
+  var ba=[];edges.forEach(function(e){if(e.blocked)ribbon(ba,e.pts,3,.8)});
+  sc.add(new T.Mesh(geo(ba),new T.MeshBasicMaterial({color:C('--bad'),transparent:true,opacity:.55,side:T.DoubleSide,depthWrite:false})));
+  // road damage patches (real CRASAR road labels)
+  var da=[],dc=[],cols={};Object.keys(RD).forEach(function(k){cols[k]=C(RD[k].v)});
+  DM.forEach(function(d){var n0=da.length;quad(da,d.x,d.y,Math.max(d.w,4),Math.max(d.h,4),d.ang,.6);var c=cols[d.c];for(var i=n0;i<da.length;i+=3)dc.push(c.r,c.g,c.b)});
+  s.dmgMesh=new T.Mesh(geo(da,dc),new T.MeshStandardMaterial({vertexColors:true,roughness:.8,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1}));sc.add(s.dmgMesh);
+  // debris piles on total obstructions
+  var ob=DM.filter(function(d){return d.c===4||d.c===7}),dr=rng(99);
+  var inst=new T.InstancedMesh(new T.BoxGeometry(1,1,1),new T.MeshStandardMaterial({color:C('--sand2'),roughness:1}),ob.length*3),m4=new T.Matrix4(),q=new T.Quaternion(),e3=new T.Euler();
+  ob.forEach(function(d,i){for(var j=0;j<3;j++){e3.set(dr()*.6,dr()*3,dr()*.6);q.setFromEuler(e3);m4.compose(new T.Vector3(X(d.x+(dr()-.5)*6),.9+dr()*.8,Z(d.y+(dr()-.5)*6)),q,new T.Vector3(1+dr()*1.6,.8+dr()*1.2,1+dr()*1.4));inst.setMatrixAt(i*3+j,m4)}});
+  inst.castShadow=true;sc.add(inst);
+  // buildings
+  var mats=JDS.map(function(j){return new T.MeshStandardMaterial({color:C(j.v),roughness:.75})});
+  var dim=JDS.map(function(j){return new T.MeshStandardMaterial({color:C(j.v),transparent:true,opacity:.14,roughness:.8})});
+  var unsc=new T.MeshStandardMaterial({color:C('--unscanned'),roughness:.9});
+  var box=new T.BoxGeometry(1,1,1);box.translate(0,.5,0);
+  var holeM=new T.MeshStandardMaterial({color:0x3a2a1c}),rubble=[];
+  s.bmesh={};
+  BR.forEach(function(b){
+    var ht=b.jds===3?1.4:b.ht,m=new T.Mesh(box,mats[b.jds]);
+    m.scale.set(X(b.w),X(ht),X(b.h));m.position.set(X(b.x),0,Z(b.y));m.rotation.y=-b.ang*Math.PI/180;
+    if(b.jds===3){m.rotation.z=.05}
+    m.castShadow=true;m.receiveShadow=true;m.userData={b:b.id};sc.add(m);s.pick.push(m);s.bmesh[b.id]=m;
+    if(b.jds===2){var hole=new T.Mesh(new T.BoxGeometry(X(b.w)*.45,.3,X(b.h)*.5),holeM);hole.position.set(X(b.x),X(ht)+.12,Z(b.y));hole.rotation.y=m.rotation.y;sc.add(hole);m.userData.cap=hole}
+    if(b.jds===3)rubble.push(b);
+  });
+  var rb=new T.InstancedMesh(new T.BoxGeometry(1,1,1),new T.MeshStandardMaterial({color:C('--jds3'),roughness:1}),rubble.length*5);
+  rubble.forEach(function(b,i){for(var j=0;j<5;j++){e3.set(dr(),dr()*3,dr());q.setFromEuler(e3);m4.compose(new T.Vector3(X(b.x+(dr()-.5)*b.w*1.3),.6,Z(b.y+(dr()-.5)*b.h*1.3)),q,new T.Vector3(1.2+dr()*2,.5+dr(),1+dr()*1.6));rb.setMatrixAt(i*5+j,m4)}});
+  rb.castShadow=true;sc.add(rb);
+  s.mats=mats;s.dim=dim;s.unsc=unsc;
+  var sel=new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(1,1,1).translate(0,.5,0)),new T.LineBasicMaterial({color:C('--ink')}));sel.visible=false;sc.add(sel);s.selBox=sel;
+  // facilities
+  s.fmesh={};
+  var pinM=new T.MeshStandardMaterial({color:C('--accent'),emissive:C('--accent'),emissiveIntensity:.5});
+  FAC.forEach(function(f){
+    var g=new T.Group();g.position.set(X(f.x),0,Z(f.y));g.rotation.y=-f.ang*Math.PI/180;
+    var ht=f.jds===3?1.6:X(f.ht),bg=new T.BoxGeometry(X(f.w),ht,X(f.h)).translate(0,ht/2,0);
+    var body=new T.Mesh(bg,mats[f.jds]);body.castShadow=true;body.receiveShadow=true;body.userData={f:f.id};g.add(body);s.pick.push(body);
+    g.add(new T.LineSegments(new T.EdgesGeometry(bg),new T.LineBasicMaterial({color:C('--ink')})));
+    var pole=new T.Mesh(new T.CylinderGeometry(.4,.4,24,6),pinM);pole.position.y=ht+12;g.add(pole);
+    var gem=new T.Mesh(new T.OctahedronGeometry(4.5),pinM);gem.position.y=ht+28;gem.userData={f:f.id};g.add(gem);s.pick.push(gem);
+    var rad=Math.max(X(f.w),X(f.h))*.8+4,ring=new T.Mesh(new T.RingGeometry(rad,rad+2,48),new T.MeshBasicMaterial({color:C('--accent'),transparent:true,opacity:.9,side:T.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.9;ring.visible=false;g.add(ring);
+    sc.add(g);
+    var lb={el:mkLabel(f.name),pos:new T.Vector3(X(f.x),ht+38,Z(f.y)),f:f.id};s.labels.push(lb);
+    s.fmesh[f.id]={g:g,gem:gem,ring:ring,lb:lb,ht:ht,body:body};
+  });
+  // staging + water labels
+  var sn=nodes[staging.node],eoc=new T.Mesh(new T.CylinderGeometry(7,7,10,24),new T.MeshStandardMaterial({color:C('--ink')}));eoc.position.set(X(sn.x),5,Z(sn.y));eoc.castShadow=true;sc.add(eoc);
+  s.labels.push({el:mkLabel('Staging (illustrative)','soft'),pos:new T.Vector3(X(sn.x),18,Z(sn.y))});
+  s.labels.push({el:mkLabel('Gulf of Mexico','soft'),pos:new T.Vector3(X(cx-560),2,Z(cy+560))});
+  s.labels.push({el:mkLabel('Estero Bay','soft'),pos:new T.Vector3(X(cx+520),2,Z(cy-520))});
+  // drone
+  var drn=new T.Group(),dm=new T.MeshStandardMaterial({color:0x22262e,roughness:.4,metalness:.3});
+  drn.add(new T.Mesh(new T.BoxGeometry(12,3.5,12),dm));s.rotors=[];
+  [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(function(c){var arm=new T.Mesh(new T.BoxGeometry(14,1,1.6),dm);arm.position.set(c[0]*5,0,c[1]*5);arm.rotation.y=-Math.atan2(c[1],c[0]);drn.add(arm);
+    var rot=new T.Mesh(new T.CylinderGeometry(6,6,.4,16),new T.MeshStandardMaterial({color:0xbfc6d2,transparent:true,opacity:.55}));rot.position.set(c[0]*10,1.6,c[1]*10);drn.add(rot);s.rotors.push(rot)});
+  var led=new T.Mesh(new T.SphereGeometry(1.4,8,8),new T.MeshBasicMaterial({color:C('--accent')}));led.position.set(0,-2.2,6);drn.add(led);
+  var FR=170,ALT=95;
+  var cone=new T.Mesh(new T.ConeGeometry(X(FR)*1.2,ALT,4,1,true),new T.MeshBasicMaterial({color:C('--accent'),transparent:true,opacity:.1,side:T.DoubleSide,depthWrite:false}));cone.rotation.y=Math.PI/4;cone.position.y=-ALT/2;drn.add(cone);
+  var fr=X(FR),foot=new T.LineLoop(new T.BufferGeometry().setFromPoints([new T.Vector3(-fr,0,-fr),new T.Vector3(fr,0,-fr),new T.Vector3(fr,0,fr),new T.Vector3(-fr,0,fr)]),new T.LineBasicMaterial({color:C('--accent')}));
+  sc.add(foot);s.foot=foot;drn.position.set(X(sn.x)+20,ALT,Z(sn.y)+20);sc.add(drn);s.drone=drn;
+  // flight lanes along the island axis
+  var r2=Math.SQRT1_2,U=B.map(function(b){return (b.x+b.y)*r2}),V=B.map(function(b){return (b.x-b.y)*r2});
+  var u0=Math.min.apply(0,U)-120,u1=Math.max.apply(0,U)+120,v0=Math.min.apply(0,V),v1=Math.max.apply(0,V),plan=[],li=0;
+  for(var v=v0+FR*.8;v<v1+FR;v+=FR*1.7){var a=[u0,u1];if(li++%2)a.reverse();a.forEach(function(u){plan.push([(u+v)*r2,(u-v)*r2])})}
+  s.plan=plan;var L=0;for(var p=1;p<plan.length;p++)L+=Math.hypot(plan[p][0]-plan[p-1][0],plan[p][1]-plan[p-1][1]);s.planLen=L;s.flight=null;
+  // route
+  s.routeG=new T.Group();sc.add(s.routeG);
+  s.pulse=new T.Mesh(new T.SphereGeometry(3,16,16),new T.MeshBasicMaterial({color:0xffffff}));sc.add(s.pulse);s.routeKey=null;
+  // HUD
+  var hud=document.createElement('div');hud.className='hud';
+  hud.innerHTML='<button class="btn sm primary" data-replay>Replay sweep flight</button><button class="btn sm" data-home>Reset view</button><span class="hudtag">Drag to orbit · scroll to zoom · click a building</span>';s.hud=hud;
+  var bar=document.createElement('div');bar.className='scanbar';bar.hidden=true;bar.innerHTML='<span class="num" data-scantxt>Scanning</span><span class="track"><span class="fill" data-scanfill></span></span>';hud.appendChild(bar);s.scanbar=bar;
+
+  s.sync=function(){
+    var f=fac();
+    BR.forEach(function(b){var m=s.bmesh[b.id],match=S.filter==='all'||String(b.jds)===S.filter;
+      m.material=!b.scanned?s.unsc:match?s.mats[b.jds]:s.dim[b.jds];if(m.userData.cap)m.userData.cap.visible=b.scanned&&match});
+    if(S.bldg&&s.bmesh[S.bldg]){var bb=B.find(function(x){return x.id===S.bldg}),mm=s.bmesh[S.bldg];s.selBox.visible=true;s.selBox.position.copy(mm.position);s.selBox.rotation.copy(mm.rotation);s.selBox.scale.set(mm.scale.x+1.2,mm.scale.y+1.2,mm.scale.z+1.2)}else s.selBox.visible=false;
+    FAC.forEach(function(q){var o=s.fmesh[q.id],on=q.id===S.fac;o.ring.visible=on;o.lb.el.className='lbl'+(on?' sel':'');o.body.material=(S.filter==='all'||String(q.jds)===S.filter)?s.mats[q.jds]:s.dim[q.jds]});
+    if(s.routeKey!==S.fac){
+      s.routeKey=S.fac;
+      while(s.routeG.children.length){var c=s.routeG.children.pop();c.geometry.dispose()}
+      var r=access(f.x,f.y);s.route=null;
+      if(r&&r.pts.length>1){var path=new T.CurvePath(),pp=r.pts.map(function(n){return new T.Vector3(X(n[0]),2.6,Z(n[1]))});if(!r.cut)pp.push(new T.Vector3(X(f.x),2.6,Z(f.y)));
+        for(var k=1;k<pp.length;k++)if(pp[k].distanceTo(pp[k-1])>.01)path.add(new T.LineCurve3(pp[k-1],pp[k]));
+        s.routeG.add(new T.Mesh(new T.TubeGeometry(path,Math.min(1200,Math.max(60,pp.length*6)),1.8,8,false),new T.MeshStandardMaterial({color:C('--accent'),emissive:C('--accent'),emissiveIntensity:.6})));
+        s.route=path;s.pulseT=0}
+      s.pulse.visible=!!s.route;
+      flyTo(s,X(f.x),0,Z(f.y));
+    }
+  };
+  s.tick=function(dt,t){
+    var a=s.water.geometry.attributes.position,arr=a.array,base=s.wbase,amp=reduce?0:1.2;
+    for(var i=0;i<arr.length;i+=3){arr[i+1]=base[i+1]+Math.sin(base[i]*.02+t*1.2)*amp+Math.cos(base[i+2]*.025+t*.9)*amp}
+    a.needsUpdate=true;if(((t*20)|0)%2===0)s.water.geometry.computeVertexNormals();
+    s.rotors.forEach(function(r){r.rotation.y+=dt*40});
+    FAC.forEach(function(q){var o=s.fmesh[q.id];o.gem.rotation.y+=dt*1.4;o.gem.position.y=o.ht+28+Math.sin(t*2+q.x)*1.5});
+    if(s.route&&s.pulse.visible){s.pulseT=(s.pulseT+dt*.12)%1;s.pulse.position.copy(s.route.getPointAt(s.pulseT))}
+    var d=s.drone;
+    if(s.flight){
+      s.flight.d+=dt*(s.planLen/26);var dd=s.flight.d,pl=s.plan,pos=null;
+      for(var k=1;k<pl.length;k++){var seg=Math.hypot(pl[k][0]-pl[k-1][0],pl[k][1]-pl[k-1][1]);if(dd<=seg){var u=dd/seg;pos=[pl[k-1][0]+(pl[k][0]-pl[k-1][0])*u,pl[k-1][1]+(pl[k][1]-pl[k-1][1])*u];d.rotation.y=-Math.atan2(pl[k][1]-pl[k-1][1],pl[k][0]-pl[k-1][0]);break}dd-=seg}
+      if(!pos){s.flight=null;s.scanbar.hidden=true;B.forEach(function(b){b.scanned=true});s.sync();toast('Sweep complete · '+B.length+' structures labelled')}
+      else{d.position.set(X(pos[0]),ALT,Z(pos[1]));
+        var changed=false;BR.forEach(function(b){if(!b.scanned&&Math.abs(b.x-pos[0])<FR&&Math.abs(b.y-pos[1])<FR){b.scanned=true;changed=true}});if(changed)s.sync();
+        var pct=s.flight.d/s.planLen;s.scanbar.querySelector('[data-scanfill]').style.width=(pct*100).toFixed(1)+'%';s.scanbar.querySelector('[data-scantxt]').textContent='Sweep '+Math.round(pct*100)+'% · '+BR.filter(function(b){return b.scanned}).length+' labelled';}
+    }else{d.position.y=ALT+Math.sin(t*1.5)*2}
+    s.foot.position.set(d.position.x,1.2,d.position.z);
+  };
+  s.replay=function(){BR.forEach(function(b){b.scanned=false});s.flight={d:0};s.scanbar.hidden=false;s.sync()};
+  return s;
+}
+
+/* ---------- site ---------- */
+function parsePts(str){return str.split(' ').map(function(p){var a=p.split(',');return [+a[0]-300,+a[1]-200]})}
+function inPoly(x,z,pts){var c=false;for(var i=0,j=pts.length-1;i<pts.length;j=i++){var xi=pts[i][0],zi=pts[i][1],xj=pts[j][0],zj=pts[j][1];if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/(zj-zi)+xi))c=!c}return c}
+function centroid(pts){var x=0,z=0;pts.forEach(function(p){x+=p[0];z+=p[1]});return [x/pts.length,z/pts.length]}
+function buildSite(key){
+  var sd=SITES[key], s=baseScene([-300,300,420],[0,40,10]), sc=s.sc, WH=46;
+  s.ctl.minDistance=140;s.ctl.maxDistance=1100;
+  var fp=parsePts(sd.footprint);
+  function roofH(x,z){if(!sd.pitch)return WH+1;var r=sd.ridge,sx=x+300,zr=(r[1]+(sx-r[0])/(r[2]-r[0])*(r[3]-r[1]))-200;return WH+Math.max(0,126-Math.abs(z-zr))*sd.pitch}
+  function hAt(x,z,ground){return ground?1:roofH(x,z)}
+  // ground
+  var gm=new T.Mesh(new T.PlaneGeometry(2400,2400).rotateX(-Math.PI/2),new T.MeshStandardMaterial({color:C('--land'),roughness:1}));gm.receiveShadow=true;sc.add(gm);
+  var grid=new T.GridHelper(1400,70,C('--block'),C('--block'));grid.position.y=.2;sc.add(grid);
+  var lot=new T.Mesh(new T.BoxGeometry(760,.6,540),new T.MeshStandardMaterial({color:C('--road'),roughness:.95}));lot.position.set(10,.3,10);lot.receiveShadow=true;sc.add(lot);
+  // walls
+  var shp=new T.Shape();fp.forEach(function(p,i){i?shp.lineTo(p[0],-p[1]):shp.moveTo(p[0],-p[1])});
+  var wg=new T.ExtrudeGeometry(shp,{depth:WH+.6,bevelEnabled:false});wg.rotateX(-Math.PI/2);
+  var walls=new T.Mesh(wg,new T.MeshStandardMaterial({color:C('--wall'),roughness:.9}));walls.castShadow=true;walls.receiveShadow=true;sc.add(walls);
+  sc.add(new T.LineSegments(new T.EdgesGeometry(wg,30),new T.LineBasicMaterial({color:C('--muted')})));
+  // windows on north facade (first edge)
+  var winM=new T.MeshStandardMaterial({color:0x5f7fa0,roughness:.2,metalness:.4});
+  var a=fp[0],b=fp[1],len=Math.hypot(b[0]-a[0],b[1]-a[1]),ang=Math.atan2(b[1]-a[1],b[0]-a[0]);
+  for(var k=40;k<len-30;k+=48){var u=k/len,wn=new T.Mesh(new T.BoxGeometry(22,14,1.2),winM);wn.position.set(a[0]+(b[0]-a[0])*u,WH*.55,a[1]+(b[1]-a[1])*u-.8);wn.rotation.y=-ang;sc.add(wn)}
+  // roof patch builder
+  function patch(pts,off,colorFn,ground,step){
+    step=step||4;var xs=pts.map(function(p){return p[0]}),zs=pts.map(function(p){return p[1]});
+    var x0=Math.min.apply(0,xs),x1=Math.max.apply(0,xs),z0=Math.min.apply(0,zs),z1=Math.max.apply(0,zs),pos=[],col=[];
+    for(var x=x0;x<x1;x+=step)for(var z=z0;z<z1;z+=step){
+      var q=[[x,z],[x+step,z],[x+step,z+step],[x,z+step]],cc=colorFn?colorFn(x,z):null;
+      [[0,1,2],[0,2,3]].forEach(function(t){var cx=(q[t[0]][0]+q[t[1]][0]+q[t[2]][0])/3,cz=(q[t[0]][1]+q[t[1]][1]+q[t[2]][1])/3;if(!inPoly(cx,cz,pts))return;
+        t.forEach(function(ix){var v=q[ix];pos.push(v[0],hAt(v[0],v[1],ground)+off,v[1]);if(cc)col.push(cc.r,cc.g,cc.b)})});
+    }
+    var g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));if(col.length)g.setAttribute('color',new T.Float32BufferAttribute(col,3));g.computeVertexNormals();return g;
+  }
+  var base=C('--roof'),rr=rng(7);
+  var roofG=patch(fp,0,function(){var k=.86+rr()*.24;return new T.Color(base.r*k,base.g*k,base.b*k)},false,4);
+  var roof=new T.Mesh(roofG,new T.MeshStandardMaterial({vertexColors:true,roughness:.95,side:T.DoubleSide,flatShading:true}));roof.castShadow=true;roof.receiveShadow=true;sc.add(roof);
+  if(sd.ridge){var r=sd.ridge;var rg=new T.Mesh(new T.BoxGeometry(Math.hypot(r[2]-r[0],r[3]-r[1]),2,4),new T.MeshStandardMaterial({color:C('--muted')}));rg.position.set((r[0]+r[2])/2-300,roofH((r[0]+r[2])/2-300,(r[1]+r[3])/2-200)+.8,(r[1]+r[3])/2-200);rg.rotation.y=-Math.atan2(r[3]-r[1],r[2]-r[0]);sc.add(rg)}
+  else{ // parapet
+    var pg=new T.EdgesGeometry(wg);var par=new T.Mesh(new T.ExtrudeGeometry(shp,{depth:4,bevelEnabled:false}).rotateX(-Math.PI/2),new T.MeshStandardMaterial({color:C('--wall'),transparent:true,opacity:.0}));sc.add(par)}
+  // defects
+  s.dmesh={};
+  var accent=C('--accent');
+  sd.defects.forEach(function(d){
+    var o={d:d};s.dmesh[d.id]=o;
+    var colv=d.code.charAt(0)==='A'?'--jds1':'--jds2';
+    o.mat=new T.MeshStandardMaterial({color:C(colv),emissive:C(colv),emissiveIntensity:.15,transparent:true,opacity:.82,side:T.DoubleSide,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
+    o.base=C(colv);
+    if(d.poly){
+      var pts=parsePts(d.poly);o.c=centroid(pts);o.cy=hAt(o.c[0],o.c[1],d.ground)+2;
+      var pm=new T.Mesh(patch(pts,.8,null,d.ground,3),o.mat);pm.userData={d:d.id};sc.add(pm);s.pick.push(pm);o.mesh=pm;
+      if(d.code==='E-R02'){ // exposed plywood look
+        o.mat.color=new T.Color(0xc9a06a);o.base=new T.Color(0xc9a06a)}
+      var lp=pts.concat([pts[0]]).map(function(p){return new T.Vector3(p[0],hAt(p[0],p[1],d.ground)+1.4,p[1])});
+      var lmat=d.state==='prov'?new T.LineDashedMaterial({color:C(colv),dashSize:6,gapSize:4}):new T.LineBasicMaterial({color:C(colv)});
+      var line=new T.Line(new T.BufferGeometry().setFromPoints(lp),lmat);line.computeLineDistances();sc.add(line);o.line=line;
+      if(d.pile){var pr=rng(d.id.charCodeAt(3)*31);for(var q=0;q<14;q++){var px=o.c[0]+(pr()-.5)*40,pz=o.c[1]+(pr()-.5)*30;if(!inPoly(px,pz,pts))continue;
+        var br=new T.Mesh(new T.CylinderGeometry(.8,1.3,10+pr()*14,5),new T.MeshStandardMaterial({color:pr()>.5?0x6b4f33:0x5c7a3a}));br.rotation.set(Math.PI/2*(.7+pr()*.3),pr()*3,0);br.position.set(px,hAt(px,pz,d.ground)+2,pz);br.castShadow=true;sc.add(br)}}
+      if(d.rtu){var rtu=new T.Mesh(new T.BoxGeometry(26,10,18),new T.MeshStandardMaterial({color:0xa9b0ba,roughness:.6,metalness:.3}));rtu.position.set(o.c[0]+10,hAt(o.c[0],o.c[1])+6,o.c[1]+12);rtu.rotation.set(0,.5,.18);rtu.castShadow=true;sc.add(rtu)}
+    }else if(d.line){
+      var l=d.line,p0=new T.Vector3(l[0]-300,WH+1.5,l[1]-200),p1=new T.Vector3(l[2]-300,WH+1.5,l[3]-200);
+      var tg=new T.Mesh(new T.TubeGeometry(new T.LineCurve3(p0,p1),20,2.2,8,false),o.mat);tg.userData={d:d.id};sc.add(tg);s.pick.push(tg);o.mesh=tg;
+      o.c=[(p0.x+p1.x)/2,(p0.z+p1.z)/2];o.cy=WH+2;
+    }else if(d.float){
+      var fx=d.float[0]-300,fz=d.float[1]-200-30;o.c=[fx,fz];o.cy=WH*.55;
+      var sp=new T.Mesh(new T.SphereGeometry(14,24,24),new T.MeshStandardMaterial({color:C('--muted'),transparent:true,opacity:.35,depthWrite:false}));sp.position.set(fx,o.cy,fz);sp.userData={d:d.id};sc.add(sp);s.pick.push(sp);o.mesh=sp;o.floaty=true;
+      var ring=new T.Mesh(new T.TorusGeometry(24,.8,8,48),new T.MeshBasicMaterial({color:C('--muted')}));ring.position.copy(sp.position);sc.add(ring);o.ring=ring;
+    }
+    var lb={el:mkLabel(d.id),pos:new T.Vector3(o.c[0],o.cy+14,o.c[1]),d:d.id};s.labels.push(lb);o.lb=lb;
+  });
+  s.rays=new T.Group();sc.add(s.rays);
+  var hud=document.createElement('div');hud.className='hud';
+  hud.innerHTML='<button class="btn sm" data-home>Reset view</button><span class="hudtag">Lines show the drone camera views that saw the selected defect</span>';s.hud=hud;
+  s.sync=function(){
+    var sel=S.defect;
+    Object.keys(s.dmesh).forEach(function(id){var o=s.dmesh[id],on=id===sel,rej=o.d.review==='rej';
+      if(o.mat){o.mat.color.copy(rej?C('--muted'):o.base);o.mat.emissiveIntensity=on?.55:.12;o.mat.opacity=rej?.3:on?.95:.78}
+      o.lb.el.className='lbl'+(on?' sel':'')});
+    while(s.rays.children.length){var c=s.rays.children.pop();c.geometry&&c.geometry.dispose()}
+    var o=s.dmesh[sel];if(!o)return;
+    var tgt=new T.Vector3(o.c[0],o.cy,o.c[1]),n=Math.min(o.d.views,9),pr=rng(sel.charCodeAt(2)*97+sel.charCodeAt(4));
+    var fm=new T.MeshStandardMaterial({color:C('--ink')}),lm=new T.LineBasicMaterial({color:C('--accent'),transparent:true,opacity:.6});
+    for(var k=0;k<n;k++){var ang=(k/n)*Math.PI*2+pr()*.5,rad=150+pr()*70,h=o.cy+120+pr()*60;
+      var cp=new T.Vector3(tgt.x+Math.cos(ang)*rad,h,tgt.z+Math.sin(ang)*rad);
+      var cam=new T.Mesh(new T.ConeGeometry(7,12,4).rotateX(-Math.PI/2),fm);cam.position.copy(cp);cam.lookAt(tgt);s.rays.add(cam);
+      s.rays.add(new T.Line(new T.BufferGeometry().setFromPoints([cp,tgt]),lm))}
+    flyTo(s,tgt.x*.6,30,tgt.z*.6+5);
+  };
+  s.tick=function(dt,t){Object.keys(s.dmesh).forEach(function(id){var o=s.dmesh[id];if(o.floaty){o.mesh.scale.setScalar(1+Math.sin(t*3)*.08);o.ring.rotation.y+=dt;o.ring.rotation.x=Math.sin(t)*.4}})};
+  return s;
+}
+
+/* ---------- loop, labels, picking ---------- */
+var tmpV;
+function loop(){
+  requestAnimationFrame(loop);
+  if(!GL||!GL.cur||!GL.vp.isConnected||document.hidden)return;
+  var s=GL.cur,dt=Math.min(GL.clock.getDelta(),.05),t=GL.clock.elapsedTime;
+  if(s.fly){var k=reduce?1:.08;
+    if(s.fly.d){var step=s.fly.d.clone().multiplyScalar(k);s.ctl.target.add(step);s.cam.position.add(step);s.fly.d.sub(step);if(s.fly.d.length()<.5)s.fly=null}
+    else{s.ctl.target.lerp(s.fly.to.t,k);s.cam.position.lerp(s.fly.to.p,k);if(s.cam.position.distanceTo(s.fly.to.p)<1)s.fly=null}}
+  s.ctl.update();s.tick(dt,t);
+  GL.r.render(s.sc,s.cam);
+  tmpV=tmpV||new T.Vector3();var w=GL.vp.clientWidth,h=GL.vp.clientHeight;
+  s.labels.forEach(function(l){tmpV.copy(l.pos).project(s.cam);var vis=tmpV.z<1&&Math.abs(tmpV.x)<1.1&&Math.abs(tmpV.y)<1.1;
+    l.el.style.display=vis?'':'none';if(vis)l.el.style.transform='translate('+((tmpV.x+1)/2*w)+'px,'+((1-tmpV.y)/2*h)+'px) translate(-50%,-100%)'});
+}
+function bindPick(){
+  var el=GL.r.domElement,down=null,ray=new T.Raycaster(),m=new T.Vector2();
+  el.addEventListener('pointerdown',function(e){down=[e.clientX,e.clientY]});
+  el.addEventListener('pointerup',function(e){
+    if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>6||!GL.cur)return;down=null;
+    var rc=el.getBoundingClientRect();m.set((e.clientX-rc.left)/rc.width*2-1,-((e.clientY-rc.top)/rc.height)*2+1);
+    ray.setFromCamera(m,GL.cur.cam);var hit=ray.intersectObjects(GL.cur.pick,false)[0];if(!hit)return;
+    var u=hit.object.userData;
+    if(u.f){S.fac=u.f;S.bldg=null;var st=site();if(st)S.defect=st.defects[0].id;panels()}
+    else if(u.b){S.bldg=u.b;panels()}
+    else if(u.d){S.defect=u.d;panels()}
+  });
+}
+
+/* ================= panels (HTML) ================= */
+function counts(){var c=[0,0,0,0,0];B.forEach(function(b){c[b.jds]++});return c}
+var RDC=(function(){var c={};DM.forEach(function(d){c[d.c]=(c[d.c]||0)+1});return c})();
+var NBLK=edges.filter(function(e){return e.blocked}).length,NSLOW=edges.filter(function(e){return !e.blocked&&e.f>1}).length;
+function sweepPanels(){
+  var c=counts(),tot=B.length,f=fac(),r=access(f.x,f.y);
+  var dist='<div class="dist">'+c.map(function(n,i){return '<span style="width:'+(n/tot*100)+'%;background:var('+JDS[i].v+')"></span>'}).join('')+'</div><div class="distkey">'+c.map(function(n,i){return '<div><span><i style="background:var('+JDS[i].v+')"></i>'+JDS[i].n+'</span><span class="num">'+n+'</span></div>'}).join('')+'</div>';
+  var roadk=[4,6,7,2,3,1,5,8].filter(function(k){return RDC[k]}).map(function(k){return '<div><span><i style="background:var('+RD[k].v+')"></i>'+RD[k].n+'</span><span class="num">'+RDC[k]+'</span></div>'}).join('');
+  var facs=FAC.slice().sort(function(a,b){return b.jds-a.jds}).map(function(q){return '<button class="row" data-f="'+q.id+'" aria-current="'+(q.id===S.fac)+'"><span class="dot" style="background:var('+JDS[q.jds].v+')"></span><span><span class="t">'+esc(q.name)+'</span><br><span class="s">'+q.id+' · Cat '+q.cat+' · '+JDS[q.jds].n+'</span></span>'+(q.flown?'<span class="pill p-ver">Detail flown</span>':q.queued?'<span class="pill p-ref">Queued</span>':'<span class="pill p-pend">Sweep only</span>')+'</button>'}).join('');
+  var bl=S.bldg?B.find(function(b){return b.id===S.bldg}):null;
+  var bcard=bl?'<div class="card"><div class="label">Selected building · real label</div><h3>'+bl.id+' · '+JDS[bl.jds].n+'</h3><div class="kv"><div><span>Footprint</span><strong class="num">'+Math.round(bl.w)+' × '+Math.round(bl.h)+' m</strong></div><div><span>Inventory match</span><strong>None</strong></div></div><p style="margin:0;font-size:13px;color:var(--muted)">Not on the applicant\'s facility list. Private structures route to Individual Assistance or housing programs, not a PA project.</p></div>':'';
+  var rt=r?'<div class="route"><div><b class="num">'+(r.len/1000).toFixed(2)+' km</b> from staging'+(r.slow?', <b>'+r.slow+'</b> segment'+(r.slow>1?'s':'')+' slowed by debris or water':', no damaged segments')+'</div>'+(r.cut?'<div class="note"><b>Last '+r.gap+' m not drivable.</b> The access road to this site is labelled totally obstructed or flooded. Plan clearance or a walk-in.</div>':'')+'<div style="color:var(--muted)">Road condition comes from labelled drone imagery. Confirm before dispatch.</div></div>':'<div class="note"><b>No clear route.</b> Every path from staging crosses a road labelled totally obstructed, flooded or destroyed.</div>';
+  var fq=f.flown?'<button class="btn primary" data-go="site">Review site in 3D</button>':f.queued?'<button class="btn" disabled>Detail flight queued</button>':'<button class="btn primary" data-queue="'+f.id+'">Queue detail flight</button>';
+  return '<div class="card"><div class="label">Building damage · Joint Damage Scale · real labels</div>'+dist+'</div>'+
+   '<div class="card"><div class="label">Selected facility</div><h3>'+esc(f.name)+'</h3><div class="kv"><div><span>Inventory</span><strong>#'+f.inv+' · '+f.id+'</strong></div><div><span>Sweep label</span><strong>'+JDS[f.jds].n+'</strong></div></div>'+rt+'<div class="btns">'+fq+'</div><p style="margin:0;font-size:12px;color:var(--muted)">Facility role is illustrative. Its footprint and damage label are real.</p></div>'+bcard+
+   '<div class="card"><div class="label">Road damage patches · real labels</div><div class="distkey">'+roadk+'</div><p style="margin:0;font-size:12.5px;color:var(--muted)"><b class="num" style="color:var(--ink)">'+NBLK+'</b> of '+edges.length+' road segments impassable, <b class="num" style="color:var(--ink)">'+NSLOW+'</b> slowed.</p></div>'+
+   '<div class="card"><div class="label">Applicant inventory · by sweep damage</div><div class="list">'+facs+'</div></div>';
+}
+function sweepView(){
+  var chips='<div class="chips" role="group" aria-label="Filter by damage">'+['all','0','1','2','3'].map(function(k){return '<button class="chip" data-filter="'+k+'" aria-pressed="'+(S.filter===k)+'">'+(k==='all'?'All':JDS[+k].n)+'</button>'}).join('')+'</div>';
+  var legend='<div class="legend">'+JDS.map(function(j){return '<span><i style="background:var('+j.v+')"></i>'+j.n+'</span>'}).join('')+'<span><i style="background:var(--bad)"></i>Road impassable</span><span><i style="background:var(--sand2)"></i>Road debris</span><span><i style="background:var(--flood2)"></i>Road flooding</span><span><i style="background:var(--accent)"></i>Route from staging</span><span>Heights illustrative</span></div>';
+  return '<div class="grid"><section class="stage"><div class="stagehead"><div><h2>Fort Myers Beach · Hurricane Ian</h2><div class="sub">'+B.length+' structures · '+edges.length+' road segments · real labels from the CRASAR-U-DROIDs post-landfall drone survey</div></div><div style="margin-left:auto">'+chips+'</div></div><div class="slot" id="slot"></div>'+legend+'</section><aside class="side" id="side">'+sweepPanels()+'</aside></div>';
+}
+
+function sitePanels(){
+  var s=site(),d=s.defects.find(function(x){return x.id===S.defect})||s.defects[0];S.defect=d.id;
+  var bars=[['Detection',d.det],['Association',d.assoc],['Material (VLM)',d.matc]].map(function(b){return '<div class="bar"><span>'+b[0]+'</span><span class="track"><span class="fill'+(b[1]<.75?' low':'')+'" style="width:'+b[1]*100+'%"></span></span><span class="num">'+b[1].toFixed(2)+'</span></div>'}).join('');
+  var list=s.defects.map(function(x){return '<button class="row" data-d="'+x.id+'" aria-current="'+(x.id===d.id)+'"><span class="dot" style="background:var('+(x.code.charAt(0)==='A'?'--jds1':'--jds2')+')"></span><span><span class="t">'+esc(x.name)+'</span><br><span class="s num">'+x.id+' · '+(x.qty!=null?fmt(x.qty)+' '+x.unit+(x.pm?' ± '+x.pm:''):'no measurement')+'</span></span><span style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'+pill(STATE,x.state)+pill(REV,x.review)+'</span></button>'}).join('');
+  return '<div class="card"><div class="label">'+d.id+' · class '+d.code+'</div><h3>'+esc(d.name)+'</h3><div style="display:flex;gap:6px;flex-wrap:wrap">'+pill(STATE,d.state)+pill(REV,d.review)+'</div>'+
+  '<div class="kv"><div><span>Quantity</span><strong class="num">'+(d.qty!=null?fmt(d.qty)+' '+d.unit+(d.pm?' ± '+d.pm:''):'Needs field count')+'</strong></div><div><span>Location</span><strong class="num">'+esc(d.ce)+'</strong></div><div><span>Component</span><strong>'+esc(d.comp)+'</strong></div><div><span>Material (candidate)</span><strong>'+esc(d.mat||'Unknown')+'</strong></div><div><span>Supporting views</span><strong class="num">'+d.views+'</strong></div><div><span>Model</span><strong class="num">seg-v0.3</strong></div></div>'+
+  bars+'<div class="note"><b>Not visible from the air:</b> '+esc(d.no)+'.</div>'+
+  '<div class="btns"><button class="btn primary" data-rev="conf">Confirm</button><button class="btn" data-rev="fld">Send to field</button><button class="btn danger" data-rev="rej">Reject</button></div></div>'+
+  '<div class="card"><div class="label">All defects at this site</div><div class="list">'+list+'</div><div class="btns"><button class="btn" data-go="scope">Open DDD draft</button></div></div>';
+}
+function siteView(){
+  var f=fac(),s=site();
+  if(!s)return '<div class="grid"><section class="stage"><div class="stagehead"><h2>'+esc(f.name)+'</h2></div><div class="empty">No detail flight for this facility yet.<br><br><button class="btn primary" data-go="sweep">Back to sweep</button></div></section><aside class="side"></aside></div>';
+  var pend=s.defects.filter(function(x){return x.review==='pend'}).length;
+  return '<div class="grid"><section class="stage"><div class="stagehead"><div><h2>'+esc(f.name)+'</h2><div class="sub">'+f.id+' · Inventory #'+f.inv+' · Detail flight '+s.flight+'</div></div><div style="margin-left:auto" class="sub"><b id="pendn">'+pend+'</b> awaiting review</div></div><div class="slot" id="slot"></div><div class="legend"><span><i style="background:var(--jds2)"></i>Cat E defect</span><span><i style="background:#c9a06a"></i>Exposed decking</span><span><i style="background:var(--jds1)"></i>Cat A debris</span><span>Dashed outline: provisional location</span><span>Grey sphere: unlocated</span></div></section><aside class="side" id="side">'+sitePanels()+'</aside></div>';
+}
+function scopeView(){
+  var f=fac(),s=site();
+  if(!s)return '<div class="stage"><div class="empty">Pick a facility with a detail flight first.<br><br><button class="btn primary" data-go="sweep">Back to sweep</button></div></div>';
+  var conf=s.defects.filter(function(x){return x.review==='conf'}),fld=s.defects.filter(function(x){return x.review==='fld'||(x.review!=='rej'&&x.state==='unl')}),pend=s.defects.filter(function(x){return x.review==='pend'&&x.state!=='unl'});
+  var n=0,rows='';
+  conf.forEach(function(x){n++;rows+='<tr><td class="num">'+n+'</td><td>'+esc(x.comp)+'</td><td>'+esc(x.name)+'</td><td class="q num">'+fmt(x.qty)+'</td><td>'+x.unit+'</td><td>'+esc(x.mat)+(x.matc<.75?' <span class="ph">verify</span>':'')+'</td><td>'+pill(STATE,x.state)+'</td></tr>'});
+  fld.forEach(function(x){n++;rows+='<tr><td class="num">'+n+'</td><td>'+esc(x.comp)+'</td><td>'+esc(x.name)+'</td><td class="q num">'+(x.qty!=null?fmt(x.qty):'[field]')+'</td><td>'+x.unit+'</td><td>[field]</td><td><span class="pill p-fld">Field required</span></td></tr>'});
+  if(!rows)rows='<tr><td colspan="7" style="color:var(--muted)">No confirmed defects yet. Review them on the Site step.</td></tr>';
+  var csv=['site_id,inventory_id,line,component,damage,quantity,unit,material,location_state,review,lat,lon'],ln=0;
+  conf.concat(fld).forEach(function(x){ln++;csv.push([f.id,f.inv,ln,x.comp,x.name,x.qty==null?'':x.qty,x.unit,x.mat,x.state,x.review==='conf'?'confirmed':'field_required',s.lat,s.lon].map(function(v){v=String(v);return /[,"]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(','))});
+  var chk=[['Latitude / longitude','From flight','var(--ok)'],['Quantified damage',conf.length+' confirmed, '+fld.length+' field',conf.length?'var(--ok)':'var(--warn)'],['Pre-incident condition','Baseline imagery, partial','var(--warn)'],['Date and cause','Applicant records','var(--muted)'],['Applicant responsibility','Applicant records','var(--muted)']];
+  return '<div class="grid"><section class="stage"><div class="paper"><div class="label">Draft · not submitted · for Site Inspector verification</div><h2>Damage Description and Dimensions</h2>'+
+  '<p><strong>'+esc(f.name)+', inventory #'+f.inv+'</strong> ('+s.lat+', '+s.lon+', sample). During the incident period of <span class="ph">[INCIDENT PERIOD]</span>, <span class="ph">[INCIDENT]</span> damaged the facility, owned and maintained by <span class="ph">[APPLICANT, RECORDS REQUIRED]</span>. Pre-event imagery shows the affected components intact.</p>'+
+  '<div class="tablebox"><table><thead><tr><th>#</th><th>Component</th><th>Damage</th><th style="text-align:right">Qty</th><th>Unit</th><th>Material</th><th>Source</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+  (pend.length?'<p style="font-size:13px;color:var(--muted)">'+pend.length+' defect'+(pend.length>1?'s':'')+' still awaiting review '+(pend.length>1?'are':'is')+' left out.</p>':'')+
+  '<p style="font-size:12.5px;color:var(--muted)">No cost, eligibility or cause determination is made here. The Site Inspector confirms these lines in the Site Inspection Report; Grants Manager generates the DDD from it.</p></div></section>'+
+  '<aside class="side"><div class="card"><div class="label">DDD completeness</div>'+chk.map(function(c){return '<div class="check"><span>'+c[0]+'</span><em style="color:'+c[2]+'">'+c[1]+'</em></div>'}).join('')+'</div>'+
+  '<div class="card"><div class="label">Site Inspection Report fields · CSV</div><textarea id="csv" readonly aria-label="CSV export">'+esc(csv.join('\n'))+'</textarea><div class="btns"><button class="btn primary" id="copy">Copy CSV</button><button class="btn" data-go="site">Back to review</button></div></div></aside></div>';
+}
+
+/* ================= render ================= */
+var app=document.getElementById('app');
+function render(){
+  document.querySelectorAll('.step').forEach(function(b){b.setAttribute('aria-selected',String(b.dataset.view===S.view))});
+  app.innerHTML=S.view==='sweep'?sweepView():S.view==='site'?siteView():scopeView();
+  if(S.view==='sweep')mount('sweep');else if(S.view==='site'&&site())mount('site');
+  try{localStorage.setItem('sortie-view',S.view)}catch(e){}
+}
+function panels(){ // update side + 3D without rebuilding the viewport
+  var side=document.getElementById('side');
+  if(side)side.innerHTML=S.view==='sweep'?sweepPanels():sitePanels();
+  var pn=document.getElementById('pendn');if(pn&&site())pn.textContent=site().defects.filter(function(x){return x.review==='pend'}).length;
+  if(GL&&GL.cur)GL.cur.sync();
+}
+function go(v){S.view=v;render();window.scrollTo({top:0})}
+document.querySelector('.steps').addEventListener('click',function(e){var b=e.target.closest('[data-view]');if(b)go(b.dataset.view)});
+document.addEventListener('click',function(e){
+  var t=e.target.closest('button');if(!t)return;
+  if(t.hasAttribute('data-replay')&&GL&&GL.cur&&GL.cur.replay){GL.cur.replay();return}
+  if(t.hasAttribute('data-home')&&GL&&GL.cur){resetView(GL.cur);return}
+  if(!app.contains(t))return;
+  if(t.dataset.filter){S.filter=t.dataset.filter;document.querySelectorAll('[data-filter]').forEach(function(c){c.setAttribute('aria-pressed',String(c.dataset.filter===S.filter))});if(GL&&GL.cur)GL.cur.sync();return}
+  if(t.dataset.f){S.fac=t.dataset.f;S.bldg=null;var st=site();if(st)S.defect=st.defects[0].id;return panels()}
+  if(t.dataset.queue){var q=FAC.find(function(x){return x.id===t.dataset.queue});q.queued=true;toast('Detail flight queued for '+q.name);return panels()}
+  if(t.dataset.go){return go(t.dataset.go)}
+  if(t.dataset.d){S.defect=t.dataset.d;return panels()}
+  if(t.dataset.rev){var s2=site(),d=s2.defects.find(function(x){return x.id===S.defect});d.review=t.dataset.rev;toast(d.id+': '+REV[d.review][0]);
+    var nx=s2.defects.find(function(x){return x.review==='pend'});if(nx)S.defect=nx.id;return panels()}
+  if(t.id==='copy'){var ta=document.getElementById('csv');
+    try{navigator.clipboard.writeText(ta.value).then(function(){toast('CSV copied')},function(){ta.select();toast('Selected. Press Ctrl+C to copy')})}catch(err){ta.select();toast('Selected. Press Ctrl+C to copy')}}
+});
+var intro=document.getElementById('intro');
+function openIntro(){intro.hidden=false;intro.scrollTop=0;intro.focus({preventScroll:true})}
+function closeIntro(){intro.hidden=true;try{localStorage.setItem('sortie-intro','seen')}catch(e){};document.getElementById('aboutbtn').focus()}
+document.getElementById('introgo').addEventListener('click',function(){closeIntro();if(S.view!=='sweep')go('sweep')});
+document.getElementById('aboutbtn').addEventListener('click',openIntro);
+intro.addEventListener('click',function(e){if(e.target===intro)closeIntro()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!intro.hidden)closeIntro()});
+var seen=null;try{seen=localStorage.getItem('sortie-intro')}catch(e){}
+if(seen)intro.hidden=true;else setTimeout(function(){intro.scrollTop=0;intro.focus({preventScroll:true})},50);
+render();
+})();
+</script>
+</body>
+</html>
