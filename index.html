@@ -86,9 +86,9 @@ button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid va
 .hud{position:absolute;left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;pointer-events:none}
 .hud>*{pointer-events:auto}
 .hudtag{font-size:12px;color:var(--muted);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:5px 9px}
-.scanbar{position:absolute;left:12px;right:12px;top:12px;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:8px 12px;font-size:12.5px}
+.scanbar{position:absolute;left:12px;right:12px;top:12px;z-index:2;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:8px 12px;font-size:12.5px}
 .scanbar .track{flex-grow:1;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
-.scanbar .fill{height:6px;background:var(--accent);width:0}
+.scanbar .fill{display:block;height:6px;background:var(--accent);width:0}
 .nogl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--muted)}
 
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:10px 16px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--muted)}
@@ -381,7 +381,7 @@ function mount(kind){
   Object.keys(GL.scenes).forEach(function(k){GL.scenes[k].ctl.enabled=(k===key)});
   GL.cur=GL.scenes[key];
   GL.labels.innerHTML='';GL.cur.labels.forEach(function(l){GL.labels.appendChild(l.el)});
-  GL.hud.innerHTML='';if(GL.cur.hud)GL.hud.appendChild(GL.cur.hud);
+  GL.hud.innerHTML='';if(GL.cur.hud)GL.hud.appendChild(GL.cur.hud);if(GL.cur.scanbar)GL.hud.appendChild(GL.cur.scanbar);
   resize();
   GL.cur.sync();
 }
@@ -506,7 +506,7 @@ function buildCity(){
   // HUD
   var hud=document.createElement('div');hud.className='hud';
   hud.innerHTML='<button class="btn sm primary" data-replay>Replay sweep flight</button><button class="btn sm" data-home>Reset view</button><span class="hudtag">Drag to orbit · scroll to zoom · click a building</span>';s.hud=hud;
-  var bar=document.createElement('div');bar.className='scanbar';bar.hidden=true;bar.innerHTML='<span class="num" data-scantxt>Scanning</span><span class="track"><span class="fill" data-scanfill></span></span>';hud.appendChild(bar);s.scanbar=bar;
+  var bar=document.createElement('div');bar.className='scanbar';bar.hidden=true;bar.innerHTML='<span class="num" data-scantxt>Scanning</span><span class="track"><span class="fill" data-scanfill></span></span>';s.scanbar=bar;
 
   s.sync=function(){
     var f=fac();
