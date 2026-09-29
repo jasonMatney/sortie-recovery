@@ -153,6 +153,39 @@ textarea{width:100%;min-height:150px;font-family:var(--mono);font-size:12px;back
 .foot{max-width:1440px;margin:16px auto 0;color:var(--muted);font-size:12px;line-height:1.5}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;font-size:13px;z-index:5}
 @media (prefers-reduced-motion:no-preference){.row,.step,.btn{transition:background .15s}}
+/* lean ui */
+.stack{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--sunk);gap:2px}
+.stack span{display:block;height:14px;min-width:3px}
+.keyrow{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--muted)}
+.keyrow span{display:inline-flex;align-items:center;gap:5px}
+.keyrow i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.keyrow b{font-family:var(--mono);font-weight:500;color:var(--ink)}
+.big{display:flex;gap:20px;flex-wrap:wrap}
+.big div{display:flex;flex-direction:column}
+.big b{font-family:var(--mono);font-size:24px;font-weight:500;line-height:1.1}
+.big span{font-size:12px;color:var(--muted)}
+.metrics{display:flex;flex-wrap:wrap;gap:8px}
+.metric{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:var(--sunk);font-size:13px}
+.metric b{font-family:var(--mono);font-weight:500}
+.metric.warn{background:var(--warn-soft);color:var(--warn)}
+.metric.bad{background:var(--bad-soft);color:var(--bad)}
+.metric svg{flex:none}
+.cardhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.info{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--rule);color:var(--muted);font-size:12px;font-weight:700;font-family:var(--body);cursor:help}
+.eye{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--muted)}
+.eye svg{flex:none;margin-top:2px}
+.iviz{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--rule)}
+.iviz>div{padding:20px clamp(16px,2.6vw,28px);display:flex;flex-direction:column;gap:10px;border-right:1px solid var(--rule)}
+.iviz>div:last-child{border-right:0}
+.iviz svg{width:100%;height:auto;max-height:150px;display:block}
+.iviz h3{margin:0;font-family:var(--display);font-stretch:85%;font-weight:700;font-size:20px;display:flex;align-items:baseline;gap:8px}
+.iviz h3 small{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted)}
+.iviz p{margin:0;font-size:14px;color:var(--muted)}
+.istrip{display:flex;flex-wrap:wrap;gap:12px 36px;align-items:flex-end;padding:18px clamp(20px,3vw,32px)}
+.istrip div{display:flex;flex-direction:column}
+.istrip b{font-family:var(--mono);font-size:30px;font-weight:500;line-height:1}
+.istrip span{font-size:12.5px;color:var(--muted);margin-top:4px}
+@media (max-width:760px){.iviz{grid-template-columns:minmax(0,1fr)}.iviz>div{border-right:0;border-bottom:1px solid var(--rule)}}
 /* intro */
 .intro{outline:0;position:fixed;inset:0;z-index:20;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow-y:auto;padding:calc(24px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px))}
 .introcard{max-width:1040px;margin:0 auto;background:var(--panel);border:1px solid var(--rule);border-radius:16px;box-shadow:0 24px 60px rgba(10,16,30,.22);overflow:hidden}
@@ -186,9 +219,9 @@ textarea{width:100%;min-height:150px;font-family:var(--mono);font-size:12px;back
 <body>
 
 <header class="top">
-  <div class="brand"><h1>Sortie</h1><span>Area sweep → site detail → DDD scope</span></div>
-  <span class="sample">Real Hurricane Ian labels · illustrative facilities and site detail</span>
-  <button class="aboutbtn" id="aboutbtn" type="button">About this demo</button>
+  <div class="brand"><h1>Sortie</h1></div>
+  <span class="sample">Hurricane Ian · real labels</span>
+  <button class="aboutbtn" id="aboutbtn" type="button" aria-label="About this demo">ⓘ About</button>
   <nav class="steps" role="tablist" aria-label="Workflow">
     <button class="step" role="tab" id="tab-sweep" data-view="sweep"><span class="k">1</span><b>Sweep</b> area triage</button>
     <button class="step" role="tab" id="tab-site" data-view="site"><span class="k">2</span><b>Site</b> defect review</button>
@@ -200,45 +233,40 @@ textarea{width:100%;min-height:150px;font-family:var(--mono);font-size:12px;back
 <div class="intro" id="intro" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="intro-title">
  <div class="introcard">
   <div class="ihero">
-   <div class="kick">Concept prototype · disaster recovery documentation</div>
+   <div class="kick">Concept prototype</div>
    <h2 id="intro-title">From drone flight to damage description</h2>
-   <p>After a disaster, inspectors walk every damaged site to measure and describe what failed for FEMA Public Assistance. Sortie shows how drone imagery and computer vision could hand them a pre-filled, reviewable draft instead: triage a whole area in minutes, zoom into the facilities that matter, and assemble the evidence behind each line of a Damage Description and Dimensions (DDD).</p>
+   <p>Triage an island in minutes. Zoom into the facilities that matter. Draft the FEMA damage record, with a person confirming every line.</p>
   </div>
-  <div class="iflow">
-   <div><span class="n">Step 1</span><h3>Sweep</h3><p>One wide-area flight gives every building a damage level on the Joint Damage Scale and marks every blocked or flooded road, so teams know where to go and how to get there.</p><span class="pill p-ver tag">Real Hurricane Ian labels</span></div>
-   <div><span class="n">Step 2</span><h3>Site</h3><p>A detailed flight over a priority facility finds component damage on a 3D model: missing roofing, exposed decking, debris. Each defect keeps its evidence, measurement and uncertainty, and a reviewer confirms it.</p><span class="pill p-prov tag">Illustrative defects</span></div>
-   <div><span class="n">Step 3</span><h3>Scope</h3><p>Confirmed defects become DDD line items. Anything a drone can't see goes on the inspector's field checklist. The inspector verifies, and FEMA's Grants Manager produces the final DDD.</p><span class="pill p-prov tag">Illustrative draft</span></div>
+  <div class="iviz">
+   <div><svg viewBox="0 0 200 120" role="img" aria-label="Buildings coloured by damage, a blocked road"><rect width="200" height="120" rx="8" fill="var(--sunk)"/>
+<path d="M0 62H200M92 0V120" stroke="var(--road)" stroke-width="9"/><path d="M130 62H200" stroke="var(--bad)" stroke-width="4" stroke-dasharray="3 4"/>
+<g><rect x="10" y="14" width="16" height="12" rx="2" fill="var(--jds0)"/><rect x="32" y="14" width="16" height="12" rx="2" fill="var(--jds1)"/><rect x="54" y="14" width="16" height="12" rx="2" fill="var(--jds0)"/><rect x="10" y="34" width="16" height="12" rx="2" fill="var(--jds1)"/><rect x="32" y="34" width="16" height="12" rx="2" fill="var(--jds0)"/><rect x="54" y="34" width="16" height="12" rx="2" fill="var(--jds0)"/><rect x="110" y="14" width="16" height="12" rx="2" fill="var(--jds1)"/><rect x="132" y="14" width="16" height="12" rx="2" fill="var(--jds2)"/><rect x="154" y="14" width="16" height="12" rx="2" fill="var(--jds1)"/><rect x="176" y="14" width="16" height="12" rx="2" fill="var(--jds3)"/><rect x="110" y="34" width="16" height="12" rx="2" fill="var(--jds2)"/><rect x="132" y="34" width="16" height="12" rx="2" fill="var(--jds3)"/><rect x="154" y="34" width="16" height="12" rx="2" fill="var(--jds2)"/><rect x="10" y="76" width="16" height="12" rx="2" fill="var(--jds0)"/><rect x="32" y="76" width="16" height="12" rx="2" fill="var(--jds0)"/><rect x="54" y="76" width="16" height="12" rx="2" fill="var(--jds1)"/><rect x="10" y="96" width="16" height="12" rx="2" fill="var(--jds0)"/><rect x="32" y="96" width="16" height="12" rx="2" fill="var(--jds1)"/><rect x="110" y="76" width="16" height="12" rx="2" fill="var(--jds1)"/><rect x="132" y="76" width="16" height="12" rx="2" fill="var(--jds2)"/><rect x="154" y="76" width="16" height="12" rx="2" fill="var(--jds3)"/><rect x="176" y="76" width="16" height="12" rx="2" fill="var(--jds2)"/><rect x="110" y="96" width="16" height="12" rx="2" fill="var(--jds2)"/><rect x="154" y="96" width="16" height="12" rx="2" fill="var(--jds3)"/></g>
+<path d="M18 62H92V40" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/><circle cx="18" cy="62" r="5" fill="var(--ink)"/></svg><h3><small>1</small>Sweep</h3><p>Every building, every road</p><span class="pill p-ver" style="align-self:flex-start">Real Hurricane Ian labels</span></div>
+   <div><svg viewBox="0 0 200 120" role="img" aria-label="Roof with a damaged area seen by several drone cameras"><rect width="200" height="120" rx="8" fill="var(--sunk)"/>
+<path d="M40 104 L60 70 L160 70 L180 104 Z" fill="var(--roof)"/><path d="M60 70 L160 70" stroke="var(--muted)"/>
+<path d="M86 80 L122 78 L128 94 L96 98 Z" fill="var(--jds2)" fill-opacity=".85"/>
+<g stroke="var(--accent)" stroke-width="1.2" opacity=".8"><path d="M30 18 L106 88"/><path d="M100 10 L106 88"/><path d="M172 20 L106 88"/></g>
+<g fill="var(--ink)"><rect x="24" y="12" width="12" height="8" rx="2"/><rect x="94" y="4" width="12" height="8" rx="2"/><rect x="166" y="14" width="12" height="8" rx="2"/></g></svg><h3><small>2</small>Site</h3><p>Every defect, with its evidence</p><span class="pill p-prov" style="align-self:flex-start">Illustrative</span></div>
+   <div><svg viewBox="0 0 200 120" role="img" aria-label="Draft document with checked line items"><rect width="200" height="120" rx="8" fill="var(--sunk)"/>
+<rect x="46" y="10" width="108" height="100" rx="4" fill="var(--paper)" stroke="var(--rule)"/>
+<rect x="58" y="20" width="60" height="6" rx="2" fill="var(--ink)"/>
+<g fill="var(--rule)"><rect x="76" y="40" width="64" height="5" rx="2"/><rect x="76" y="56" width="52" height="5" rx="2"/><rect x="76" y="72" width="58" height="5" rx="2"/><rect x="76" y="88" width="44" height="5" rx="2"/></g>
+<g fill="none" stroke-width="2.4" stroke-linecap="round"><path d="M60 42l4 4 6-7" stroke="var(--ok)"/><path d="M60 58l4 4 6-7" stroke="var(--ok)"/><path d="M60 74l4 4 6-7" stroke="var(--ok)"/></g>
+<circle cx="65" cy="90" r="4" fill="none" stroke="var(--warn)" stroke-width="2"/></svg><h3><small>3</small>Scope</h3><p>A draft the inspector verifies</p><span class="pill p-prov" style="align-self:flex-start">Illustrative</span></div>
   </div>
-  <div class="idata">
-   <section>
-    <div class="label">What the Sweep view shows</div>
-    <div class="istats"><span><b>931</b>buildings, labelled</span><span><b>1,120</b>road damage patches</span><span><b>82</b>impassable road segments</span></div>
-    <ul>
-     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span>Building footprints and damage levels for part of Fort Myers Beach, FL, labelled by human annotators from drone imagery flown after Hurricane Ian (2022).</span></li>
-     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span>Road debris, obstruction and flooding labels from the same imagery. Routes avoid impassable segments.</span></li>
-     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--warn)" stroke-width="2"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.5"/><circle cx="8" cy="11" r=".6" fill="var(--warn)"/></svg><span>Building heights, the staging point and the five public facilities are placed for the demo. Their footprints and damage labels are real; their roles are not.</span></li>
-     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--warn)" stroke-width="2"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.5"/><circle cx="8" cy="11" r=".6" fill="var(--warn)"/></svg><span>These are human labels, not model output. A model trained on this dataset would produce the same kind of map.</span></li>
-    </ul>
-   </section>
-   <section>
-    <div class="label">How to use it</div>
-    <ul>
-     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span>Drag the 3D map to orbit, scroll to zoom, and click any building for its label.</span></li>
-     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span>Press <b>Replay sweep flight</b> to watch the drone survey the island.</span></li>
-     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span>Pick a facility, check its route from staging, then open <b>Review site in 3D</b> to confirm, reject or send defects to the field.</span></li>
-     <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span>Open <b>Scope</b> to see the DDD draft build from your decisions, and copy the inspection fields as CSV.</span></li>
-    </ul>
-   </section>
+  <div class="istrip">
+   <div><b>931</b><span>buildings labelled</span></div>
+   <div><b>1,120</b><span>road damage patches</span></div>
+   <div><b>82</b><span>roads impassable</span></div>
+   <div><b>Fort Myers Beach</b><span>after Hurricane Ian, 2022</span></div>
   </div>
   <div class="ifoot">
-   <p>Data: CRASAR-U-DROIDs, Center for Robot-Assisted Search and Rescue, Texas A&amp;M (Manzini, Murphy et al.), CC BY 4.0, with Microsoft building footprints and OpenStreetMap roads as packaged there. <a href="https://huggingface.co/datasets/CRASAR/CRASAR-U-DROIDs" target="_blank" rel="noopener">Dataset page</a>. This demo does not determine eligibility, cause or cost, and is not affiliated with FEMA.</p>
-   <button class="btn primary" id="introgo" type="button">Start the tour</button>
+   <p>Labels: <a href="https://huggingface.co/datasets/CRASAR/CRASAR-U-DROIDs" target="_blank" rel="noopener">CRASAR-U-DROIDs</a>, Texas A&amp;M, CC BY 4.0. Heights, staging and facility roles are placed for the demo. Not affiliated with FEMA.</p>
+   <button class="btn primary" id="introgo" type="button">Fly the sweep ▶</button>
   </div>
  </div>
 </div>
-
-
-<p class="foot">Concept prototype. The Sweep view uses real building and road damage labels for part of Fort Myers Beach, FL after Hurricane Ian, from CRASAR-U-DROIDs (Manzini, Murphy et al., Texas A&amp;M; CC BY 4.0); building footprints are Microsoft's and roads are OpenStreetMap, as packaged in that dataset. Building heights, the staging point and the facility roles are illustrative, and the Site and Scope views use synthetic defects. Nothing here determines Public Assistance eligibility, cause or cost.</p>
+<p class="foot">Concept demo. Sweep labels: CRASAR-U-DROIDs, Texas A&amp;M (CC BY 4.0). Not affiliated with FEMA.</p>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -505,7 +533,7 @@ function buildCity(){
   s.pulse=new T.Mesh(new T.SphereGeometry(3,16,16),new T.MeshBasicMaterial({color:0xffffff}));sc.add(s.pulse);s.routeKey=null;
   // HUD
   var hud=document.createElement('div');hud.className='hud';
-  hud.innerHTML='<button class="btn sm primary" data-replay>Replay sweep flight</button><button class="btn sm" data-home>Reset view</button><span class="hudtag">Drag to orbit · scroll to zoom · click a building</span>';s.hud=hud;
+  hud.innerHTML='<button class="btn sm primary" data-replay>▶ Fly sweep</button><button class="btn sm" data-home>Reset view</button><span class="hudtag">Drag · scroll · click</span>';s.hud=hud;
   var bar=document.createElement('div');bar.className='scanbar';bar.hidden=true;bar.innerHTML='<span class="num" data-scantxt>Scanning</span><span class="track"><span class="fill" data-scanfill></span></span>';s.scanbar=bar;
 
   s.sync=function(){
@@ -620,7 +648,7 @@ function buildSite(key){
   });
   s.rays=new T.Group();sc.add(s.rays);
   var hud=document.createElement('div');hud.className='hud';
-  hud.innerHTML='<button class="btn sm" data-home>Reset view</button><span class="hudtag">Lines show the drone camera views that saw the selected defect</span>';s.hud=hud;
+  hud.innerHTML='<button class="btn sm" data-home>Reset view</button><span class="hudtag">Lines = camera views of the defect</span>';s.hud=hud;
   s.sync=function(){
     var sel=S.defect;
     Object.keys(s.dmesh).forEach(function(id){var o=s.dmesh[id],on=id===sel,rej=o.d.review==='rej';
@@ -673,41 +701,47 @@ function bindPick(){
 function counts(){var c=[0,0,0,0,0];B.forEach(function(b){c[b.jds]++});return c}
 var RDC=(function(){var c={};DM.forEach(function(d){c[d.c]=(c[d.c]||0)+1});return c})();
 var NBLK=edges.filter(function(e){return e.blocked}).length,NSLOW=edges.filter(function(e){return !e.blocked&&e.f>1}).length;
+var IC={
+ route:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="3.5" cy="12.5" r="2"/><circle cx="12.5" cy="3.5" r="2"/><path d="M5.5 12.5H10a2.5 2.5 0 000-5H6a2.5 2.5 0 010-5h4.5"/></svg>',
+ slow:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2l6.5 12h-13z"/><path d="M8 6.5v3.5"/></svg>',
+ block:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M4 12l8-8"/></svg>',
+ eye:'<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z"/><path d="M2 14L14 2"/></svg>'
+};
+function stackBar(items){var tot=items.reduce(function(a,x){return a+x.n},0)||1;return '<div class="stack">'+items.map(function(x){return '<span style="width:'+(x.n/tot*100)+'%;background:var('+x.v+')" title="'+esc(x.t)+': '+x.n+'"></span>'}).join('')+'</div><div class="keyrow">'+items.map(function(x){return '<span><i style="background:var('+x.v+')"></i>'+esc(x.t)+' <b>'+x.n+'</b></span>'}).join('')+'</div>'}
 function sweepPanels(){
-  var c=counts(),tot=B.length,f=fac(),r=access(f.x,f.y);
-  var dist='<div class="dist">'+c.map(function(n,i){return '<span style="width:'+(n/tot*100)+'%;background:var('+JDS[i].v+')"></span>'}).join('')+'</div><div class="distkey">'+c.map(function(n,i){return '<div><span><i style="background:var('+JDS[i].v+')"></i>'+JDS[i].n+'</span><span class="num">'+n+'</span></div>'}).join('')+'</div>';
-  var roadk=[4,6,7,2,3,1,5,8].filter(function(k){return RDC[k]}).map(function(k){return '<div><span><i style="background:var('+RD[k].v+')"></i>'+RD[k].n+'</span><span class="num">'+RDC[k]+'</span></div>'}).join('');
-  var facs=FAC.slice().sort(function(a,b){return b.jds-a.jds}).map(function(q){return '<button class="row" data-f="'+q.id+'" aria-current="'+(q.id===S.fac)+'"><span class="dot" style="background:var('+JDS[q.jds].v+')"></span><span><span class="t">'+esc(q.name)+'</span><br><span class="s">'+q.id+' · Cat '+q.cat+' · '+JDS[q.jds].n+'</span></span>'+(q.flown?'<span class="pill p-ver">Detail flown</span>':q.queued?'<span class="pill p-ref">Queued</span>':'<span class="pill p-pend">Sweep only</span>')+'</button>'}).join('');
+  var c=counts(),f=fac(),r=access(f.x,f.y);
+  var bld=stackBar(c.map(function(n,i){return {n:n,v:JDS[i].v,t:JDS[i].n}}));
+  var road=stackBar([[4,'Blocked'],[6,'Flooded'],[7,'Destroyed'],[2,'Full debris'],[3,'Partial block'],[1,'Partial debris'],[5,'Partial flood']].filter(function(k){return RDC[k[0]]}).map(function(k){return {n:RDC[k[0]],v:RD[k[0]].v,t:k[1]}}));
+  var facs=FAC.slice().sort(function(a,b){return b.jds-a.jds}).map(function(q){return '<button class="row" data-f="'+q.id+'" aria-current="'+(q.id===S.fac)+'"><span class="dot" style="background:var('+JDS[q.jds].v+')"></span><span><span class="t">'+esc(q.name)+'</span><br><span class="s">'+JDS[q.jds].n+'</span></span>'+(q.flown?'<span class="pill p-ver">3D ready</span>':q.queued?'<span class="pill p-ref">Queued</span>':'<span class="pill p-pend">Sweep</span>')+'</button>'}).join('');
   var bl=S.bldg?B.find(function(b){return b.id===S.bldg}):null;
-  var bcard=bl?'<div class="card"><div class="label">Selected building · real label</div><h3>'+bl.id+' · '+JDS[bl.jds].n+'</h3><div class="kv"><div><span>Footprint</span><strong class="num">'+Math.round(bl.w)+' × '+Math.round(bl.h)+' m</strong></div><div><span>Inventory match</span><strong>None</strong></div></div><p style="margin:0;font-size:13px;color:var(--muted)">Not on the applicant\'s facility list. Private structures route to Individual Assistance or housing programs, not a PA project.</p></div>':'';
-  var rt=r?'<div class="route"><div><b class="num">'+(r.len/1000).toFixed(2)+' km</b> from staging'+(r.slow?', <b>'+r.slow+'</b> segment'+(r.slow>1?'s':'')+' slowed by debris or water':', no damaged segments')+'</div>'+(r.cut?'<div class="note"><b>Last '+r.gap+' m not drivable.</b> The access road to this site is labelled totally obstructed or flooded. Plan clearance or a walk-in.</div>':'')+'<div style="color:var(--muted)">Road condition comes from labelled drone imagery. Confirm before dispatch.</div></div>':'<div class="note"><b>No clear route.</b> Every path from staging crosses a road labelled totally obstructed, flooded or destroyed.</div>';
-  var fq=f.flown?'<button class="btn primary" data-go="site">Review site in 3D</button>':f.queued?'<button class="btn" disabled>Detail flight queued</button>':'<button class="btn primary" data-queue="'+f.id+'">Queue detail flight</button>';
-  return '<div class="card"><div class="label">Building damage · Joint Damage Scale · real labels</div>'+dist+'</div>'+
-   '<div class="card"><div class="label">Selected facility</div><h3>'+esc(f.name)+'</h3><div class="kv"><div><span>Inventory</span><strong>#'+f.inv+' · '+f.id+'</strong></div><div><span>Sweep label</span><strong>'+JDS[f.jds].n+'</strong></div></div>'+rt+'<div class="btns">'+fq+'</div><p style="margin:0;font-size:12px;color:var(--muted)">Facility role is illustrative. Its footprint and damage label are real.</p></div>'+bcard+
-   '<div class="card"><div class="label">Road damage patches · real labels</div><div class="distkey">'+roadk+'</div><p style="margin:0;font-size:12.5px;color:var(--muted)"><b class="num" style="color:var(--ink)">'+NBLK+'</b> of '+edges.length+' road segments impassable, <b class="num" style="color:var(--ink)">'+NSLOW+'</b> slowed.</p></div>'+
-   '<div class="card"><div class="label">Applicant inventory · by sweep damage</div><div class="list">'+facs+'</div></div>';
+  var bcard=bl?'<div class="card"><div class="cardhead"><h3>'+bl.id+'</h3><span class="pill" style="background:var('+JDS[bl.jds].v+');color:#111">'+JDS[bl.jds].n+'</span></div><div class="metrics"><span class="metric"><b>'+Math.round(bl.w)+'×'+Math.round(bl.h)+' m</b></span><span class="metric">Not on inventory</span><span class="metric">→ Individual Assistance</span></div></div>':'';
+  var rt=r?'<div class="metrics"><span class="metric">'+IC.route+'<b>'+(r.len/1000).toFixed(1)+' km</b></span>'+(r.slow?'<span class="metric warn">'+IC.slow+'<b>'+r.slow+'</b> slowed</span>':'')+(r.cut?'<span class="metric bad">'+IC.block+'last <b>'+r.gap+' m</b> blocked</span>':'')+'</div>':'<div class="metrics"><span class="metric bad">'+IC.block+'No drivable route</span></div>';
+  var fq=f.flown?'<button class="btn primary" data-go="site">Open in 3D</button>':f.queued?'<button class="btn" disabled>Flight queued</button>':'<button class="btn primary" data-queue="'+f.id+'">Queue detail flight</button>';
+  return '<div class="card"><div class="cardhead"><div class="label">Buildings</div><span class="info" title="Joint Damage Scale labels from CRASAR-U-DROIDs">i</span></div>'+bld+'</div>'+
+   '<div class="card"><div class="cardhead"><h3>'+esc(f.name)+'</h3><span class="pill" style="background:var('+JDS[f.jds].v+');color:#111">'+JDS[f.jds].n+'</span></div>'+rt+'<div class="btns">'+fq+'</div></div>'+bcard+
+   '<div class="card"><div class="cardhead"><div class="label">Roads</div><span class="info" title="Road damage patches from the same drone survey. Blocked, flooded and destroyed segments are removed from routing.">i</span></div><div class="big"><div><b>'+NBLK+'</b><span>impassable</span></div><div><b>'+NSLOW+'</b><span>slowed</span></div><div><b>'+edges.length+'</b><span>segments</span></div></div>'+road+'</div>'+
+   '<div class="card"><div class="cardhead"><div class="label">Facilities</div><span class="info" title="Illustrative roles on real footprints and labels">i</span></div><div class="list">'+facs+'</div></div>';
 }
 function sweepView(){
-  var chips='<div class="chips" role="group" aria-label="Filter by damage">'+['all','0','1','2','3'].map(function(k){return '<button class="chip" data-filter="'+k+'" aria-pressed="'+(S.filter===k)+'">'+(k==='all'?'All':JDS[+k].n)+'</button>'}).join('')+'</div>';
-  var legend='<div class="legend">'+JDS.map(function(j){return '<span><i style="background:var('+j.v+')"></i>'+j.n+'</span>'}).join('')+'<span><i style="background:var(--bad)"></i>Road impassable</span><span><i style="background:var(--sand2)"></i>Road debris</span><span><i style="background:var(--flood2)"></i>Road flooding</span><span><i style="background:var(--accent)"></i>Route from staging</span><span>Heights illustrative</span></div>';
-  return '<div class="grid"><section class="stage"><div class="stagehead"><div><h2>Fort Myers Beach · Hurricane Ian</h2><div class="sub">'+B.length+' structures · '+edges.length+' road segments · real labels from the CRASAR-U-DROIDs post-landfall drone survey</div></div><div style="margin-left:auto">'+chips+'</div></div><div class="slot" id="slot"></div>'+legend+'</section><aside class="side" id="side">'+sweepPanels()+'</aside></div>';
+  var chips='<div class="chips" role="group" aria-label="Filter by damage">'+['all','0','1','2','3'].map(function(k){return '<button class="chip" data-filter="'+k+'" aria-pressed="'+(S.filter===k)+'">'+(k==='all'?'All':'<i style="width:9px;height:9px;border-radius:2px;display:inline-block;background:var('+JDS[+k].v+')"></i>'+['None','Minor','Major','Destroyed'][+k])+'</button>'}).join('')+'</div>';
+  var legend='<div class="legend"><span><i style="background:var(--bad)"></i>Blocked</span><span><i style="background:var(--sand2)"></i>Debris</span><span><i style="background:var(--flood2)"></i>Flooded</span><span><i style="background:var(--accent)"></i>Route</span></div>';
+  return '<div class="grid"><section class="stage"><div class="stagehead"><div><h2>Fort Myers Beach</h2><div class="sub">'+B.length+' buildings · '+edges.length+' road segments</div></div><div style="margin-left:auto">'+chips+'</div></div><div class="slot" id="slot"></div>'+legend+'</section><aside class="side" id="side">'+sweepPanels()+'</aside></div>';
 }
-
 function sitePanels(){
   var s=site(),d=s.defects.find(function(x){return x.id===S.defect})||s.defects[0];S.defect=d.id;
-  var bars=[['Detection',d.det],['Association',d.assoc],['Material (VLM)',d.matc]].map(function(b){return '<div class="bar"><span>'+b[0]+'</span><span class="track"><span class="fill'+(b[1]<.75?' low':'')+'" style="width:'+b[1]*100+'%"></span></span><span class="num">'+b[1].toFixed(2)+'</span></div>'}).join('');
-  var list=s.defects.map(function(x){return '<button class="row" data-d="'+x.id+'" aria-current="'+(x.id===d.id)+'"><span class="dot" style="background:var('+(x.code.charAt(0)==='A'?'--jds1':'--jds2')+')"></span><span><span class="t">'+esc(x.name)+'</span><br><span class="s num">'+x.id+' · '+(x.qty!=null?fmt(x.qty)+' '+x.unit+(x.pm?' ± '+x.pm:''):'no measurement')+'</span></span><span style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'+pill(STATE,x.state)+pill(REV,x.review)+'</span></button>'}).join('');
-  return '<div class="card"><div class="label">'+d.id+' · class '+d.code+'</div><h3>'+esc(d.name)+'</h3><div style="display:flex;gap:6px;flex-wrap:wrap">'+pill(STATE,d.state)+pill(REV,d.review)+'</div>'+
-  '<div class="kv"><div><span>Quantity</span><strong class="num">'+(d.qty!=null?fmt(d.qty)+' '+d.unit+(d.pm?' ± '+d.pm:''):'Needs field count')+'</strong></div><div><span>Location</span><strong class="num">'+esc(d.ce)+'</strong></div><div><span>Component</span><strong>'+esc(d.comp)+'</strong></div><div><span>Material (candidate)</span><strong>'+esc(d.mat||'Unknown')+'</strong></div><div><span>Supporting views</span><strong class="num">'+d.views+'</strong></div><div><span>Model</span><strong class="num">seg-v0.3</strong></div></div>'+
-  bars+'<div class="note"><b>Not visible from the air:</b> '+esc(d.no)+'.</div>'+
-  '<div class="btns"><button class="btn primary" data-rev="conf">Confirm</button><button class="btn" data-rev="fld">Send to field</button><button class="btn danger" data-rev="rej">Reject</button></div></div>'+
-  '<div class="card"><div class="label">All defects at this site</div><div class="list">'+list+'</div><div class="btns"><button class="btn" data-go="scope">Open DDD draft</button></div></div>';
+  var bars=[['Detection',d.det],['Association',d.assoc],['Material',d.matc]].map(function(b){return '<div class="bar"><span>'+b[0]+'</span><span class="track"><span class="fill'+(b[1]<.75?' low':'')+'" style="width:'+b[1]*100+'%"></span></span><span class="num">'+b[1].toFixed(2)+'</span></div>'}).join('');
+  var list=s.defects.map(function(x){return '<button class="row" data-d="'+x.id+'" aria-current="'+(x.id===d.id)+'"><span class="dot" style="background:var('+(x.code.charAt(0)==='A'?'--jds1':'--jds2')+')"></span><span><span class="t">'+esc(x.name)+'</span><br><span class="s num">'+(x.qty!=null?fmt(x.qty)+' '+x.unit:'—')+'</span></span>'+pill(REV,x.review)+'</button>'}).join('');
+  return '<div class="card"><div class="cardhead"><h3>'+esc(d.name)+'</h3>'+pill(STATE,d.state)+'</div>'+
+  '<div class="big"><div><b>'+(d.qty!=null?fmt(d.qty):'?')+'</b><span>'+d.unit+(d.pm?' ± '+d.pm:'')+'</span></div><div><b>'+d.views+'</b><span>views</span></div><div><b style="font-size:16px;padding-top:6px">'+esc(d.ce)+'</b><span>location</span></div></div>'+
+  bars+'<div class="eye">'+IC.eye+'<span>'+esc(d.no)+'</span></div>'+
+  '<div class="btns"><button class="btn primary" data-rev="conf">Confirm</button><button class="btn" data-rev="fld">Field</button><button class="btn danger" data-rev="rej">Reject</button></div></div>'+
+  '<div class="card"><div class="list">'+list+'</div><div class="btns"><button class="btn" data-go="scope">Draft DDD →</button></div></div>';
 }
 function siteView(){
   var f=fac(),s=site();
-  if(!s)return '<div class="grid"><section class="stage"><div class="stagehead"><h2>'+esc(f.name)+'</h2></div><div class="empty">No detail flight for this facility yet.<br><br><button class="btn primary" data-go="sweep">Back to sweep</button></div></section><aside class="side"></aside></div>';
+  if(!s)return '<div class="grid"><section class="stage"><div class="stagehead"><h2>'+esc(f.name)+'</h2></div><div class="empty">No detail flight yet.<br><br><button class="btn primary" data-go="sweep">Back to sweep</button></div></section><aside class="side"></aside></div>';
   var pend=s.defects.filter(function(x){return x.review==='pend'}).length;
-  return '<div class="grid"><section class="stage"><div class="stagehead"><div><h2>'+esc(f.name)+'</h2><div class="sub">'+f.id+' · Inventory #'+f.inv+' · Detail flight '+s.flight+'</div></div><div style="margin-left:auto" class="sub"><b id="pendn">'+pend+'</b> awaiting review</div></div><div class="slot" id="slot"></div><div class="legend"><span><i style="background:var(--jds2)"></i>Cat E defect</span><span><i style="background:#c9a06a"></i>Exposed decking</span><span><i style="background:var(--jds1)"></i>Cat A debris</span><span>Dashed outline: provisional location</span><span>Grey sphere: unlocated</span></div></section><aside class="side" id="side">'+sitePanels()+'</aside></div>';
+  return '<div class="grid"><section class="stage"><div class="stagehead"><div><h2>'+esc(f.name)+'</h2><div class="sub"><b id="pendn">'+pend+'</b> to review</div></div><span class="pill p-prov" style="margin-left:auto">Illustrative defects</span></div><div class="slot" id="slot"></div><div class="legend"><span><i style="background:var(--jds2)"></i>Defect</span><span><i style="background:#c9a06a"></i>Decking</span><span><i style="background:var(--jds1)"></i>Debris</span><span>┄ Provisional</span><span>◯ Unlocated</span></div></section><aside class="side" id="side">'+sitePanels()+'</aside></div>';
 }
 function scopeView(){
   var f=fac(),s=site();
@@ -716,17 +750,16 @@ function scopeView(){
   var n=0,rows='';
   conf.forEach(function(x){n++;rows+='<tr><td class="num">'+n+'</td><td>'+esc(x.comp)+'</td><td>'+esc(x.name)+'</td><td class="q num">'+fmt(x.qty)+'</td><td>'+x.unit+'</td><td>'+esc(x.mat)+(x.matc<.75?' <span class="ph">verify</span>':'')+'</td><td>'+pill(STATE,x.state)+'</td></tr>'});
   fld.forEach(function(x){n++;rows+='<tr><td class="num">'+n+'</td><td>'+esc(x.comp)+'</td><td>'+esc(x.name)+'</td><td class="q num">'+(x.qty!=null?fmt(x.qty):'[field]')+'</td><td>'+x.unit+'</td><td>[field]</td><td><span class="pill p-fld">Field required</span></td></tr>'});
-  if(!rows)rows='<tr><td colspan="7" style="color:var(--muted)">No confirmed defects yet. Review them on the Site step.</td></tr>';
+  if(!rows)rows='<tr><td colspan="7" style="color:var(--muted)">Nothing confirmed yet.</td></tr>';
   var csv=['site_id,inventory_id,line,component,damage,quantity,unit,material,location_state,review,lat,lon'],ln=0;
   conf.concat(fld).forEach(function(x){ln++;csv.push([f.id,f.inv,ln,x.comp,x.name,x.qty==null?'':x.qty,x.unit,x.mat,x.state,x.review==='conf'?'confirmed':'field_required',s.lat,s.lon].map(function(v){v=String(v);return /[,"]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(','))});
-  var chk=[['Latitude / longitude','From flight','var(--ok)'],['Quantified damage',conf.length+' confirmed, '+fld.length+' field',conf.length?'var(--ok)':'var(--warn)'],['Pre-incident condition','Baseline imagery, partial','var(--warn)'],['Date and cause','Applicant records','var(--muted)'],['Applicant responsibility','Applicant records','var(--muted)']];
-  return '<div class="grid"><section class="stage"><div class="paper"><div class="label">Draft · not submitted · for Site Inspector verification</div><h2>Damage Description and Dimensions</h2>'+
+  var chk=[['Location','Drone','var(--ok)'],['Dimensions',conf.length+' ✓ · '+fld.length+' field',conf.length?'var(--ok)':'var(--warn)'],['Pre-event condition','Partial','var(--warn)'],['Date and cause','Records','var(--muted)'],['Responsibility','Records','var(--muted)']];
+  return '<div class="grid"><section class="stage"><div class="paper"><div class="cardhead"><div class="label">Draft for inspector verification</div><span class="pill p-prov">Illustrative</span></div><h2>Damage Description and Dimensions</h2>'+
   '<p><strong>'+esc(f.name)+', inventory #'+f.inv+'</strong> ('+s.lat+', '+s.lon+', sample). During the incident period of <span class="ph">[INCIDENT PERIOD]</span>, <span class="ph">[INCIDENT]</span> damaged the facility, owned and maintained by <span class="ph">[APPLICANT, RECORDS REQUIRED]</span>. Pre-event imagery shows the affected components intact.</p>'+
   '<div class="tablebox"><table><thead><tr><th>#</th><th>Component</th><th>Damage</th><th style="text-align:right">Qty</th><th>Unit</th><th>Material</th><th>Source</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-  (pend.length?'<p style="font-size:13px;color:var(--muted)">'+pend.length+' defect'+(pend.length>1?'s':'')+' still awaiting review '+(pend.length>1?'are':'is')+' left out.</p>':'')+
-  '<p style="font-size:12.5px;color:var(--muted)">No cost, eligibility or cause determination is made here. The Site Inspector confirms these lines in the Site Inspection Report; Grants Manager generates the DDD from it.</p></div></section>'+
-  '<aside class="side"><div class="card"><div class="label">DDD completeness</div>'+chk.map(function(c){return '<div class="check"><span>'+c[0]+'</span><em style="color:'+c[2]+'">'+c[1]+'</em></div>'}).join('')+'</div>'+
-  '<div class="card"><div class="label">Site Inspection Report fields · CSV</div><textarea id="csv" readonly aria-label="CSV export">'+esc(csv.join('\n'))+'</textarea><div class="btns"><button class="btn primary" id="copy">Copy CSV</button><button class="btn" data-go="site">Back to review</button></div></div></aside></div>';
+  (pend.length?'<div class="metrics"><span class="metric warn">'+IC.slow+'<b>'+pend.length+'</b> still to review</span><button class="btn sm" data-go="site">Review</button></div>':'')+'</div></section>'+
+  '<aside class="side"><div class="card"><div class="label">Completeness</div>'+chk.map(function(c){return '<div class="check"><span>'+c[0]+'</span><em style="color:'+c[2]+'">'+c[1]+'</em></div>'}).join('')+'</div>'+
+  '<div class="card"><div class="label">Inspection fields · CSV</div><textarea id="csv" readonly aria-label="CSV export">'+esc(csv.join('\n'))+'</textarea><div class="btns"><button class="btn primary" id="copy">Copy CSV</button><button class="btn" data-go="site">Back to review</button></div></div></aside></div>';
 }
 
 /* ================= render ================= */
@@ -763,7 +796,7 @@ document.addEventListener('click',function(e){
 var intro=document.getElementById('intro');
 function openIntro(){intro.hidden=false;intro.scrollTop=0;intro.focus({preventScroll:true})}
 function closeIntro(){intro.hidden=true;try{localStorage.setItem('sortie-intro','seen')}catch(e){};document.getElementById('aboutbtn').focus()}
-document.getElementById('introgo').addEventListener('click',function(){closeIntro();if(S.view!=='sweep')go('sweep')});
+document.getElementById('introgo').addEventListener('click',function(){closeIntro();if(S.view!=='sweep')go('sweep');setTimeout(function(){if(GL&&GL.cur&&GL.cur.replay)GL.cur.replay()},400)});
 document.getElementById('aboutbtn').addEventListener('click',openIntro);
 intro.addEventListener('click',function(e){if(e.target===intro)closeIntro()});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!intro.hidden)closeIntro()});
